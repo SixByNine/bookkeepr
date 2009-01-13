@@ -1,0 +1,30 @@
+<html>
+<head>
+<link href="/web/css/root.css" type="text/css" rel="stylesheet"/>
+<script type="text/javascript">
+	function showhide(id){
+		elem = document.getElementById(id);
+		if(elem.style.display=='none'){
+			elem.style.display='block';
+		} else {
+			elem.style.display='none';
+		}
+	}
+</script>
+
+</head>
+<body>
+
+<iframe src="/ident" id="server_status"></iframe>
+
+<div class="floating">
+<h1>BookKeepr Server</h1>
+<p>
+<ul class="horizmenu">
+<li><a href="/web/">Main Menu</a></li>
+<li><a href="/log/">Log Messages</a></li>
+</ul>
+</p>
+</div>
+<div class="floating" style="clear:both;" id="page">
+

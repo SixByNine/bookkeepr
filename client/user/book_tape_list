@@ -1,0 +1,129 @@
+#!/usr/bin/python
+import sys,httplib,os
+from urlparse import urlparse
+from xml.dom.minidom import parse, Node
+import socket
+
+def printTapeContents(rooturi,tape_id):
+	uri = urlparse("http://"+rooturi+"/storage/"+tape_id)
+	reply = doHttpGet(uri)
+	if reply.status == 404:
+		print "No files written"
+		return
+	if reply.status >= 400 and reply.status < 500:
+	        print "A client error has occured (%s)"%reply.status
+	        sys.stdout.write(reply.read())
+	        sys.exit(1)
+	if reply.status >= 500 and reply.status < 600:
+	        print "A server error has occured (%s)"%reply.status
+	        sys.stdout.write(reply.read())
+	        sys.exit(1)
+	doc = parse(reply)
+       	for psrxml in doc.getElementsByTagName("psrxml"):
+		source_name = psrxml.getElementsByTagName("source_name")[0].firstChild.data
+		coord = psrxml.getElementsByTagName("start_coordinate")[0].getElementsByTagName("friendly_eq")[0].firstChild.data
+		mjd = psrxml.getElementsByTagName("day_of_observation")[0].firstChild.data
+		beam = psrxml.getElementsByTagName("receiver_beam")[0].firstChild.data
+		utcnode = psrxml.getElementsByTagName("utc")[0]
+		utcstr="?????"
+		if utcnode.firstChild:
+			utcstr = utcnode.firstChild.data
+
+
+		print "% 12s % 2s% 25s % 6s % 22s"%(source_name,beam,coord,mjd,utcstr)
+
+
+
+
+def doHttpGet(uri):
+
+
+	proxy = os.environ.get("http_proxy")
+
+	httpurl = uri[1]
+	httpreq = uri[2]
+	if proxy != None:
+	        httpurl = urlparse(proxy)[1]
+	        httpreq = rooturi
+	        sys.stderr.write("Connecting via proxy\n")
+
+	sys.stderr.write("Connecting to %s\n"%httpurl)
+	#sys.stderr.write("GET from %s\n"%httpreq)
+	connection = httplib.HTTPConnection(httpurl)
+	try:
+	        connection.putrequest("GET",httpreq)
+	        connection.putheader("User-Agent","BookKeepr-Client")
+	        connection.endheaders()
+	        reply = connection.getresponse()
+
+	except socket.error:
+        	print "A socket error occured whilst posting the request"
+	        print "Connection refused or broken whilst comunicating with the server"
+	        sys.exit(2)
+
+	return reply
+	
+
+if len(sys.argv) < 2:
+	print "book_tape_list server tape_label"
+	print "\nPrints a list of all files written to the tape"
+	sys.exit(1)
+
+rooturi = sys.argv[1]
+
+lookup = 0
+if len(sys.argv) > 2:
+	label=sys.argv[2]
+	uri = urlparse("http://"+rooturi+"/storage/label/"+label)
+	lookup = 1
+else:
+	uri = urlparse("http://"+rooturi+"/storage/")
+	
+
+reply = doHttpGet(uri)
+
+if reply.status == 404:
+	print "Tape %s not found"%label
+	sys.exit(1)
+
+if reply.status >= 400 and reply.status < 500:
+	print "A client error has occured (%s)"%reply.status
+	sys.stdout.write(reply.read())
+	sys.exit(1)
+if reply.status >= 500 and reply.status < 600:
+	print "A server error has occured (%s)"%reply.status
+	sys.stdout.write(reply.read())
+	sys.exit(1)
+
+if reply.status == 200:
+	# we got a good reply... parse the tape list
+
+
+	# parse the document
+	doc = parse(reply)
+	for tape in doc.getElementsByTagName("archived_storage"):
+		for node in tape.childNodes:
+			if node.localName == "id":
+				id = node.firstChild.data
+			if node.localName == "media_label":
+				label =  node.firstChild.data
+			if node.localName == "media_type":
+				type = node.firstChild.data
+			if node.localName == "storage_location":
+				loc = node.firstChild.data
+			
+		print "%s (%s; %s)"%(label,type,loc)
+		if lookup:
+			printTapeContents(rooturi,id)
+
+	doc.unlink()
+	sys.exit(0)
+
+
+
+
+
+
+
+
+

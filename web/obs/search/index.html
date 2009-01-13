@@ -1,0 +1,24 @@
+%%%head
+<h2>Search the observations database</h2>
+<form method="POST" action="/web/xmlify/obs/manager">
+	<fieldset>
+		<legend>Search Options</legend>
+		<input type="hidden" name="class" value="PointingSelectRequest" />
+		<h4>Pointing Search Options</h4>
+		<label for="">Grid ID</label><input type="text" name="GridId" /><br />
+		<label for="check1">Match Grid ID with regex</label><input type="checkbox" value="true" name="UseRegularExpresions" id="check1"/>
+		<label>Select near coordinate</label><input type="text" name="Target"/>
+		<label>Max seperation</label><input type="text" name="TargetSeperation" value="0.5" size="3" />
+		<label for="check2">Hide 'To Observe'</label><input type="checkbox" value="false" name="SelectToObserve" id="check2"/>
+		<label for="check3">Hide 'Not To Observe'</label><input type="checkbox" value="false" name="SelectNotToObserve" id="check3"/>
+		<label>Max results</label><input type="text" name="MaxResults" value="100" size="3" />
+		<input class="submit" type="submit" value="Search"/>
+		<h4>Header Search Options</h4>
+		<label>Observation <acronym title="MJD or UTC yyyy/mm/dd">date</acronym> (min)</label><input type="text" name="DateMin"/>
+		<label>Observation <acronym title="MJD or UTC yyyy/mm/dd">date</acronym> (max)</label><input type="text" name="DateMax"/>
+		<label>Observation <acronym title="UTC time">time</acronym> (min)</label><input type="text" name="TimeMin"/>
+		<label>Observation <acronym title="UTC time">time</acronym> (max)</label><input type="text" name="TimeMax"/>
+                <input class="submit" type="submit" value="Search"/>
+	</fieldset>
+</form>
+%%%tail

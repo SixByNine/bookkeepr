@@ -1,0 +1,33 @@
+#!/bin/bash
+server=$1
+psrxmlid=$2
+tapeid=$3
+number=$4
+
+if [[ "$#" -ne "4" ]]
+then
+	echo "book_write_to_tape server psrxml_id tape_id file_number"
+	echo ""
+	echo "marks a psrxml file as written in the database"
+	echo "e.g. book_write_to_tape apsr-srv0:24001 011e00000000001 011600000000001 004"
+	exit 255
+fi
+
+
+echo "<?xml version='1.0'?>
+<archived_storage_write>
+<storage_id>$tapeid</storage_id>
+<psrxml_id>$psrxmlid</psrxml_id>
+<date_written>$date</date_written>
+<file_label>$number</file_label>
+</archived_storage_write>" | $BOOKKEEPR_CLIENT/util/xmlposter.py http://$server/storage/
+
+
+ex=$?
+if [[ $ex -ne 0 ]]
+then
+	echo "An error occured sending to the database"
+	exit $ex
+fi
+echo "Tape write created"
+exit 0

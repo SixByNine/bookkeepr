@@ -1,0 +1,212 @@
+/*body etc*/
+body{
+    background-color: #101000;
+    margin: 0 0 0 0;
+    color: #FFFFFF;
+    padding: 0 0 0 0;
+    margin: 0 0 0 0;
+    
+    font-family: Arial,Helvetica,sans-serif;
+}
+
+h1,h2,h3,h4{
+    font-family: sans-serif;
+    float: left;
+    color: #F0F0D0;
+    clear: both;
+    margin-top: 0.4em;
+    margin-bottom: 0.5em;
+}
+
+a{
+	    color: #F0F0D0;
+
+}
+
+a:hover
+{
+            color: #B0B0FF;
+}
+
+
+/* forms */
+
+input{
+    color:#FFFFFF;
+    background-color:#404020;
+    border: #B0B080 solid 1px;
+    font-size: 12pt;
+    float: left;
+    margin-top: 0.5em;
+}
+select{
+    color:#FFFFFF;
+    background-color:#404020;
+    border: #B0B080 solid 1px;
+    font-size: 12pt;
+    float: left;
+    margin-top: 0.5em;
+}
+
+input.submit{
+    clear:both;
+    margin-left:12.5em;
+    margin-top: 1em;
+    border: #B0B080 outset 2px;
+}
+input.submit:hover
+{
+    clear:both;
+    margin-left:12.5em;
+    border: #B0B080 outset 2px;
+    background-color:#000000;
+}
+
+label{
+    float: left;
+    display: block;
+    width: 12em;
+    margin-right: 0.5em;
+    text-align: right;
+    font-size: 12pt;
+    margin-top: 0.6em;
+    clear:both;
+}
+
+legend
+{
+    border: #F0F0D0 solid 1px;
+    background-color:#404020;
+}
+
+.border{
+	border: #F0F0D0 solid 1px;
+}
+
+fieldset{
+    border: #F0F0D0 solid 1px;
+    clear: both;
+}
+
+/* floats */
+
+.floating{
+    float: left;
+    margin-left:1em;
+}
+
+/* menus */
+
+.horizmenu li{
+    display: inline;
+    margin-left: 1em;
+    float: left;
+}
+
+.vertmenu li{
+    display: block;
+    margin-top: 0.2em;
+    margin-bottom: 0.2em;
+    float: left;
+    clear: both;
+}
+
+.vertmenu li a,
+.horizmenu li a{
+    text-decoration: none;
+    color: #FFFFFF;
+    background-color: #404020;
+    padding: 1px 1px 1px 1px;
+    border: #B0B080 solid 1px;
+    float:left;
+}
+.vertmenu li a
+{
+    width: 20em;
+}
+
+
+.vertmenu li a:hover,
+.horizmenu li a:hover
+{
+    text-decoration: none;
+    background-color: #808040;
+}
+
+h1{
+    margin-top: 0px;
+    padding-top: 5px;
+    font-size: 28pt;
+}
+h2{
+    font-size: 22pt;
+}
+h3{
+    font-size: 20pt;
+}
+
+img{
+    margin: 0 0 0 0;
+    padding: 0 0 0 0;
+}
+
+
+.host_status{
+    margin: 0 0 0 0;
+    padding: 0 0 0 0;
+}
+img.host_status{
+    float:left;
+}
+
+
+/* tables */
+
+
+td{
+    border: #404020 solid 1px;
+    text-align: center;    
+}
+
+table{
+    border-collapse: collapse;
+    border: #B0B080 solid 2px;
+    float:left;
+}
+
+.logINFO{
+    
+}
+
+.logWARNING td{
+    
+    background-color: yellow;
+    color: black;
+}
+
+.logSEVERE td{
+    background-color: red;
+    border-left: white solid 1px;
+    border-right: white solid 1px;
+}
+
+
+/*Fixed elements*/
+#server_status{
+    border: none;
+    overflow: hidden;
+    width: 70px;
+    height: 100px;
+    padding: 0 0 0 0;
+    margin: 0 0 0 0;
+    float:left;
+}
+
+div.hostnumber{
+  font-size: 36pt;
+  font-family: 'Courier New',Courier,monospace;
+  font-weight: bold;
+      color: #F0F0D0;
+
+}
+

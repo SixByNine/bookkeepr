@@ -1,0 +1,26 @@
+GSIV 1.0.1 (2006-03-16):
+	* added localization for two warning messages
+	* fixed the TileUrlProvider checking in the constructor
+	* added GSIV.isInstance to check for an instance of a class
+	* fixed python script to allow for missing background color parameter
+
+GSIV 1.0.0 (2006-02-26):
+	* completely new object-oriented design
+	* use json options format
+	* optimized performance (both in drag, rendering and zoom)
+	* fixed rounding error in tile placement that lead to artifact lines
+	* added upper zoom limit
+	* added initial pan option
+	* added observers that can send viewer events to listeners
+	* double-click to recenter
+	* smooth motion when repositioning
+	* method to position absolutely (recenter on absolute point)
+	* method to fit to window (resize)
+	* additional options for file names and extensions
+	* preloading image tiles (loading animation)
+	* prevent from scrolling outside of original image boundary (uses blank	tile)
+	* throttle mouse move events to increase performance
+	* cross-browser mouse cursor implementation that represent dragging
+	* account for scroll offset of page when calculating coordinates
+	* keyboard events for movement (initial attempt)
+	* new tilemaker.py python script, using a cleaner design and additional options

@@ -1,0 +1,30 @@
+#!/bin/bash
+server=$1
+tapelabel=$2
+tapeloc=$3
+
+if [[ "$#" -ne "3" ]]
+then
+	echo "book_create_tape tape_label tape_location"
+	echo ""
+	echo "Creates a new tape in the database"
+	echo "e.g. book_create_tape apsr-srv0:24001 HTRU0001 Swinburne"
+	exit 255
+fi
+
+
+ret=`echo "<?xml version='1.0'?>
+<archived_storage>
+<media_type>TAPE</media_type>
+<media_label>$tapelabel</media_label>
+<storage_location>$tapeloc</storage_location>
+</archived_storage>" | $BOOKKEEPR_CLIENT/util/xmlposter.py http://$server/storage/`
+ex=$?
+echo $ret | html2text
+if [[ $ex -ne 0 ]]
+then
+	echo "An error occured sending to the database"
+	exit $ex
+fi
+echo "Tape created"
+exit 0

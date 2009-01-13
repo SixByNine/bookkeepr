@@ -1,0 +1,19 @@
+%%%head
+<h2>Define new receiver</h2>
+<form method="POST" action="/web/xmlify/obs/create">
+	<fieldset>
+		<legend>Receiver parameters</legend>
+		<input type="hidden" name="class" value="Receiver" />
+		<label>Name</label><input type="text" name="Name" />
+		<label>FWHM</label><input type="text" name="Fwhm" />
+		<label>Gl Beam Pattern</label><input type="text" name="GlBeamPattern" />
+		<label>Gb Beam Pattern</label><input type="text" name="GbBeamPattern" />
+		<label>Gl Grid Pattern</label><input type="text" name="GlGridPattern" />
+		<label>Gb Grid Pattern</label><input type="text" name="GbGridPattern" />
+		<label>Gl Grid Offset</label><input type="text" name="GlGridOffset" />
+		<label>Gb Grid Offset</label><input type="text" name="GbGridOffset" />
+		<input class="submit" type="submit" value="Create"/>
+	</fieldset>
+</form>
+
+%%%tail

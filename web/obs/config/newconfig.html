@@ -1,0 +1,17 @@
+%%%head
+	<h2>Create new config</h2>
+	<fieldset>
+		<legend>Select config parameters</legend>
+	<form method="POST" action="/web/xmlify/obs/create">
+		<input type="hidden" name="class" value="Configuration" />
+		<label>Name</label><input type="text" name="Name" /><br />
+		<label>Config String</label><input type="text" name="ConfigString" />
+		<label>Tobs</label><input type="text" name="Tobs" />
+		<label>Telescope</label>
+***chooser Telescope
+<label>Receiver</label>
+***chooser Receiver
+		<input class="submit" type="submit" value="Create"/>
+	</form>
+</fieldset>
+%%%tail

@@ -1,0 +1,116 @@
+<html>
+	<head>
+		<link rel="stylesheet" href="/web/gsiv/assets/styles/gsiv.css" />
+		                <link href="/web/css/root.css" type="text/css" rel="stylesheet"/>
+
+
+		<script type="text/javascript" src="/web/gsiv/assets/js/GSIV.js"></script>
+		<script type="text/javascript" src="/web/gsiv/assets/js/EventUtils.js"></script>
+
+		<script type="text/javascript">
+			// <![CDATA[
+
+		var viewerBean = null;
+		var maximized = false;
+
+		function initializeGraphic(e) {
+			// opera triggers the onload twice
+			if (viewerBean == null) {
+				viewerBean = new GSIV('viewer', {
+tileBaseUri: '/obs/map/tiles',
+tileSize: 128,
+tilePrefix: 'tile',
+tileExtension: 'png',
+maxZoom: 6,
+initialZoom: 2,
+blankTile: '/web/gsiv/assets/gfx/blank.gif',
+loadingTile: '/web/gsiv/assets/gfx/blank.gif'
+});
+//viewerBean.fitToWindow(0);
+viewerBean.init();
+//viewerBean.recenter({'x':400 ,'y':800}, true);
+}
+}
+
+function reinitializeGraphic(e) {
+	viewerBean.resize();
+}
+// uses the callback format GSIV.{className}Handler
+GSIV.maximizeHandler = function(e) {
+	if (maximized) {
+		// HACK: remove auto-fit to window (this needs to be a function)
+		viewerBean.border = -1;
+//		document.body.style.padding = '0';
+		document.getElementById('header').style.display = 'block';
+		document.getElementById('footer').style.display = 'block';
+		document.getElementById('viewer').style.width = '800px';
+		document.getElementById('viewer').style.height = '600px';
+		document.getElementById('viewer').style.borderWidth = '1';
+	}
+	else {
+//		document.body.style.padding = '0';
+
+		document.getElementById('header').style.display = 'none';
+		document.getElementById('footer').style.display = 'none';
+		document.getElementById('viewer').style.borderWidth = '0';
+
+
+		// HACK allow auto-fit to window (this needs to be a function)
+		viewerBean.border = 0;
+		viewerBean.resize();
+	}
+
+	maximized = !maximized;
+}
+
+EventUtils.addEventListener(window, 'load', initializeGraphic, false);
+EventUtils.addEventListener(window, 'resize', reinitializeGraphic, false);
+
+// ]]>
+</script>
+<style type="text/css">
+	#viewer {
+		background-color: #000000;
+		
+		width: 800px;
+		height: 600px;
+	}
+	#viewer .controls{
+		background-color: #FFFFFF;
+	}
+</style>
+
+</head>
+<body>
+
+	<div id="header">
+		<iframe src="/ident" id="server_status"></iframe>
+
+		<div class="floating">
+
+
+			<h1>BookKeepr Server</h1>
+			<p>
+			<ul class="horizmenu">
+				<li><a href="/web/">Main Menu</a></li>
+				<li><a href="/log/">Log Messages</a></li>
+			</ul>
+			</p>
+		</div>
+		<h3>Survey Map</h3>
+
+	</div>
+	<div id="viewer" class="border" class="floating" style="clear: both;">
+		<div class="well"><!-- --></div>
+		<div class="surface"><!-- --></div>
+		<p class="controls">
+		<a href="javascript: void(0);" class="zoomIn" title="Zoom In" style="font-family: serif;">+</a>
+		<a href="javascript: void(0);" class="zoomOut" title="Zoom Out"  style="font-family: serif;">-</a>
+		<a href="javascript: void(0);" class="maximize"><img src="/web/gsiv/assets/gfx/window.gif" style="position: absolute; bottom: 4px; right: 5px;" title="Maximize"/></a>
+
+		</p>
+	</div>
+	<div id="footer">
+	</div>
+	</body>
+</html>

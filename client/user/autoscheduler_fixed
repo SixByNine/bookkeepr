@@ -1,0 +1,230 @@
+#!/usr/bin/python
+from math import degrees
+import math
+import sys, random
+from datetime import datetime,timedelta
+from xml.dom.minidom import parse, Node
+from time import strptime,mktime
+try:
+	import ephem
+except ImportError:
+	print "You need the 'ephem' python module to make schedules"
+	print "You can get this from http://pypi.python.org/pypi/pyephem/"
+	print "Try 'easy_install pyephem' on the command line for a quick install"
+	print "This is avaliable in ph-pipeline as pyephem"
+	sys.exit(255)
+try:
+	sys.path.append(sys.path[0]+"/../util")
+	import xmlposter
+except ImportError:
+	print "Could not find Mike's xmlposter module."
+	print "Maybe this program, or the module has been moved"
+	print "Add the 'BookKeepr/client/util' directory to $PYTHONPATH"
+	sys.exit(255)
+
+
+def getAzimuthAndZenith(telescope,zenith_wobble_factor=0):
+	azimuth = raw_input("Enter desired azimuthal angle: ")
+	try:
+		if float(azimuth) < 0:
+			print "You entered an azimuthal angle < 0."
+			return getAzimuthAndZenith(telescope,zenith_wobble_factor)
+		if float(azimuth) > 360:
+			print "You entered an azimuthal angle > 360."
+			return getAzimuthAndZenith(telescope,zenith_wobble_factor)
+	except ValueError:
+		print "You did not enter a valid azimuth"
+		return getAzimuthAndZenith(telescope,zenith_wobble_factor)
+
+	zenith = raw_input("Enter desired angle of zenith: ")
+	try:
+		if float(zenith)-zenith_wobble_factor < 0:
+			print "Zenith less than %d is not possible. Sorry!"%(zenith_wobble_factor)
+			return getAzimuthAndZenith(telescope,zenith_wobble_factor)
+		if float(zenith)+zenith_wobble_factor > (90-degrees(telescope.horizon)):
+			print "Zenith angle cannot be more than %d degrees!"%(90-degrees(telescope.horizon)-zenith_wobble_factor)
+			return getAzimuthAndZenith(telescope,zenith_wobble_factor)
+	except ValueError:
+		print "You did not enter a valid zenith"
+		return getAzimuthAndZenith(telescope,zenith_wobble_factor)
+
+	return azimuth,zenith
+
+
+
+if len(sys.argv) < 2:
+	print "Please provide a server"
+	sys.exit(1)
+
+print """               r(-              
+************************************
+AutoScheduler - Fixed Az/Zen Version
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\\
+2008-11-09 S.Bates/M.Keith
+************************************
+"""
+
+
+server=sys.argv[1]
+#start=sys.argv[2]
+#azimuth=sys.argv[3]
+#zenith=sys.argv[4]
+#totalhours=float(sys.argv[5])
+
+parkes = ephem.Observer()
+parkes.long = '148.263333'
+parkes.lat = '-32.999962'
+parkes.elevation = 414.8
+parkes.horizon = '30.25'
+
+
+# The altitude/zenith "wobble effect"
+alt_off = 0
+alt_inc = 2
+alt_limit = 4
+
+surveytobss=dict()
+surveytobss['l']=4200
+surveytobss['m']=540
+surveytobss['h']=270
+
+idlist=list()
+
+
+startdate = raw_input("Enter date (YYYY/MM/DD) or hit RETURN for date = today: ")
+#if start=="now":
+cache = datetime.utcnow()
+starttime = raw_input("Enter time (hh:mm) or hit RETURN for time = now: ")
+
+#if len(startdate)==0 and len(starttime)==0:
+#	t = cache
+if len(startdate)==0:
+	startdate = cache.strftime("%Y/%m/%d")
+#	t = startdate + " " + starttime
+if len(starttime)==0:
+	starttime = cache.strftime("%H:%M")
+
+try:
+	t = datetime.fromtimestamp(mktime(strptime("%s %s"%(startdate,starttime),"%Y/%m/%d %H:%M")))
+except ValueError:
+	print "The date/time you entered was not in an acceptable form: YYYY/MM/DD then HH:MM"
+	sys.exit(1)
+
+print "Using date and time " + str(t)
+
+azimuth,zenith = getAzimuthAndZenith(parkes,alt_limit)
+
+
+
+surveytype = raw_input("Enter the survey type to make schdeule for...\n(l)ow, (m)ed or (h)igh lat or (a)ny: ")
+if surveytype not in surveytobss:
+	print "Using any 'tobs' parameter for pointing search"
+else:
+	print "Using tobs=%f for pointing search"%surveytobss[surveytype]
+
+totalhours = raw_input("Enter total time (hours) for observations (def=8): ")
+if totalhours.strip()=="":
+	totalhours="8"
+if float(totalhours) < 0:
+	print "Don't be so stupid. Bye"
+	sys.exit(6)
+
+sched_file_name = raw_input("Enter schedule name to create (def=newsched): ")
+if sched_file_name == "":
+	sched_file_name="newsched"
+if not sched_file_name.endswith(".sch"):
+	sched_file_name += ".sch"
+sched_file = open(sched_file_name,"w")
+
+totaltime = timedelta(hours=float(totalhours))
+
+endtime = t + totaltime
+alt = 90-float(zenith)
+
+
+cur_surveytype=surveytype
+print "Creating schedule, please be patient..."
+lst_hours=-1
+#xmlout = "<?xml version='1.0' ?>\n"
+while t < endtime:
+	parkes.date=t.strftime("%Y/%m/%d %H:%M:%S")
+	old_lst=lst_hours
+	lst=parkes.sidereal_time()
+	lst_float=(lst/math.pi)*12
+	lst_hours= int(lst_float)
+
+	ra,dec = parkes.radec_of(azimuth,"%f"%(alt+alt_off))
+
+	xmlout = "<?xml version='1.0' ?>\n"
+	xmlout += "<pointing_select_request>\n\t<target>J"+str(ra)+" "+ str(dec)+"</target>\n\t<target_seperation>10</target_seperation>\n\t<select_not_to_observe>false</select_not_to_observe>\n\t<max_results>1</max_results>\n"
+	if cur_surveytype in surveytobss:
+		mintobs=surveytobss[cur_surveytype] - 1
+		maxtobs=surveytobss[cur_surveytype] + 1
+		xmlout += "<max_tobs>%f</max_tobs><min_tobs>%f</min_tobs>\n"%(maxtobs,mintobs)
+
+	xmlout += "\t<visible_at>%f</visible_at>\n"%lst_float
+	if len(idlist) > 0:
+		xmlout += "\t<ignore_id_list>"
+		for id in idlist:
+			if not id == idlist[0]:
+				xmlout+=","
+			xmlout+=id
+		xmlout += "\t</ignore_id_list>\n"
+	xmlout += "</pointing_select_request>"
+
+	reply = xmlposter.postXml("http://"+server+"/obs/manager",xmlout)
+
+	if reply.status == 404:
+		# there were no matches
+		print "No unobserved pointings detected on %s,\n at %s %s for az=%s zen=%s"%(t,ra,dec,azimuth,zenith)
+		print "Enter a new Azimuth and Zenith to continue:"
+		azimuth,zenith=getAzimuthAndZenith(parkes,alt_limit)
+		alt = 90-float(zenith)
+		continue
+	
+	if not reply.status == 200:
+		print "Something went wrong talking to the server... (error: %d)"%reply.status
+		print reply.read()
+
+# Parse the xml comming from the server
+	doc = parse(reply)
+	pointing_list = doc.getElementsByTagName("extended_pointing")
+	if len (pointing_list) == 0:
+		# there were no matches
+		file = open("req.xml","w")
+		file.write(xmlout)
+		file.close()
+                print "No unobserved pointings detected on %s,\n at %s %s for az=%s zen=%s"%(t,ra,dec,azimuth,zenith)
+		if surveytype in surveytobss:
+			print "with tobs = %f"%surveytobss[surveytype]
+			cur_surveytype=raw_input("Temporaraly change to a different survey mode? (press return to continue)\nEnter (a)ny, (l)ow, (m)ed, (h)igh lat: ")
+			if not cur_surveytype.strip()=="":
+				if cur_surveytype not in surveytobss:
+					cur_surveytype="a"
+				continue
+			else:
+				cur_surveytype=surveytype
+                print "Enter a new Azimuth and Zenith to continue:"
+                azimuth,zenith=getAzimuthAndZenith(parkes,alt_limit)
+                alt = 90-float(zenith)
+                continue
+
+	cur_surveytype=surveytype
+	# get the bits of the document we need
+	tobs = pointing_list[0].getElementsByTagName("tobs")[0].firstChild.data
+	tobs=float(tobs)
+	sched_line=pointing_list[0].getElementsByTagName("schedule_line")[0].firstChild.data.strip()
+	ptg_id=pointing_list[0].getElementsByTagName("id")[0].firstChild.data.strip()
+	idlist.append(ptg_id)
+	if not lst_hours == old_lst:
+		sched_file.write("#LST: %s\n"%lst) 
+		print "T: %s LST:%s"%(t,lst)
+	sched_file.write(sched_line+"\n")
+
+        t += timedelta(seconds=tobs)
+	alt_off+=alt_inc
+        if alt_off > alt_limit or alt_off < -alt_limit:
+		alt_inc = -alt_inc
+		alt_off += 2*alt_inc
+
+print "Done. Schedule ends at %s"%t

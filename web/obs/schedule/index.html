@@ -1,0 +1,20 @@
+%%%head
+	<h2>Generate Observing Schedule</h2>
+	<form method="POST" action="/web/xmlify/obs/manager">
+		<fieldset>
+			<legend>Schedule Parameters</legend>
+		<input type="hidden" name="class" value="CreateScheduleRequest" />
+
+		<label>Select pointings in</label>
+		***chooser Configuration
+		<br />
+		<label>Start LST (hours)</label><input type="text" value="10" name="StartLst" size="4"/>
+		<label>Schedule length (hours)</label><input type="text" value="8" name="TotalTime" size="4"/>
+		<label>Zenith offset (hours)</label><input type="text" value="2" name="ZenithOffset" size="4"/>
+		<label>'Normalise' RAs</label><input type="checkbox" value="true" name="Normalise" checked="true"/>
+		<label>Max dec</label><input type="text" value="90" name="MaxDec" size="4"/>
+		<label>Min dec</label><input type="text" value="-90" name="MinDec" size="4"/>
+		<input class="submit" type="submit" value="Generate"/>
+	</fieldset>
+	</form>
+%%%tail

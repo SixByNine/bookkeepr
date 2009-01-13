@@ -1,0 +1,25 @@
+%%%head
+	<h2>Generate Observing Schedule</h2>
+	<form method="POST" action="/web/xmlify/obs/manager">
+		<input type="hidden" name="class" value="CreatePointingsRequest" />
+		<fieldset>
+			<legend>Specify survey region</legend>
+		<label>Use pointing config</label>
+		***chooser Configuration
+		<br />
+		<input type="hidden" name="Limits.gl.Name" value="gl" />
+		<label>Max Gl</label><input type="text" name="Limits.gl.Max" value="180" />
+		<label>Min Gl</label><input type="text" name="Limits.gl.Min" value="-180" /><br />
+		<input type="hidden" name="Limits.gb.Name" value="gb" />
+		<label>Max Gb</label><input type="text" name="Limits.gb.Max" value="5" />
+			<label>Min Gb</label><input type="text" name="Limits.gb.Min" value="-5" /><br />
+		<input type="hidden" name="Limits.ra.Name" value="ra" />
+		<label>Max RA</label><input type="text" name="Limits.ra.Max" value="360" />
+			<label>Min RA</label><input type="text" name="Limits.ra.Min" value="0" /><br />
+		<input type="hidden" name="Limits.dec.Name" value="dec" />
+		<label>Max Dec</label><input type="text" name="Limits.dec.Max" value="20" />
+			<label>Min Dec</label><input type="text" name="Limits.dec.Min" value="-90" /><br />
+			<input class="submit" type="submit" value="Generate"/>
+		</fieldset>
+	</form>
+%%%tail
