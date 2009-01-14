@@ -30,7 +30,7 @@
 				</fileset>
 			</classpath>
 		</javac>
-		<jar jarfile="bookkeepr.jar" basedir="${build}" />
+		<jar jarfile="bookkeepr.jar" basedir="${build}" manifest="manifest"/>
 	</target>
 
 	<target name="run" depends="build">
