@@ -92,7 +92,7 @@ public class CandidateHandler extends AbstractHandler {
 
         if (path.startsWith("/cand/")) {
             ((Request) request).setHandled(true);
-                            
+
 
             if (path.startsWith("/cand/lists")) {
                 if (request.getMethod().equals("GET")) {
@@ -222,10 +222,23 @@ public class CandidateHandler extends AbstractHandler {
                 }
             } else if (path.startsWith("/cand/classified")) {
                 if (request.getMethod().equals("GET")) {
+                    String[] elems = path.substring(1).split("/");
                     ClassifiedCandidateIndex idx = new ClassifiedCandidateIndex();
                     List<IdAble> list = dbMan.getAllOfType(TypeIdManager.getTypeFromClass(ClassifiedCandidate.class));
-                    for (IdAble stub : list) {
-                        idx.addClassifiedCandidate((ClassifiedCandidate) stub);
+                    if (elems.length > 2) {
+
+                        int cl = Integer.parseInt(elems[2]);
+                        for (IdAble stub : list) {
+                            if (((ClassifiedCandidate) stub).getCandClassInt() == cl) {
+                                idx.addClassifiedCandidate((ClassifiedCandidate) stub);
+                            }
+                        }
+                    } else {
+
+
+                        for (IdAble stub : list) {
+                            idx.addClassifiedCandidate((ClassifiedCandidate) stub);
+                        }
                     }
                     OutputStream out = response.getOutputStream();
                     String hdr = request.getHeader("Accept-Encoding");

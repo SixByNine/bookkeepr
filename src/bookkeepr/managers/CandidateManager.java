@@ -67,7 +67,7 @@ public class CandidateManager {
     private DatabaseManager dbMan;
     private CandidateMatchingManager candMatcher;
 
-    public CandidateManager(String rootPath, DatabaseManager dbMan,BackgroundTaskRunner bgRunner) {
+    public CandidateManager(String rootPath, DatabaseManager dbMan, BackgroundTaskRunner bgRunner) {
         this.rootPath = rootPath;
         this.dbMan = dbMan;
         candMatcher = new CandidateMatchingManager(dbMan, this, bgRunner);
@@ -198,26 +198,32 @@ public class CandidateManager {
         return idx;
     }
 
-    public BufferedImage makeImageOf(RawCandidate candidate,int width, int height){
+    public BufferedImage makeImageOf(RawCandidate candidate, int width, int height) {
         BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         RasterImageCandidatePlot plot = new RasterImageCandidatePlot(img);
-        
+
         GenerateRawCandidatePlot.generate(plot, candidate, Colourmap.defaultGreyColmap, Color.RED, Color.BLUE);
         return img;
     }
-    
-    
-    public List<ClassifiedCandidate> getClassifiedCandidatesNear(Coordinate coord, double distmax) {
+
+    public ArrayList<ClassifiedCandidate> getClassifiedCandidatesNear(Coordinate coord, double distmax) {
         CoordinateDistanceComparitor distComp = new CoordinateDistanceComparitor(coord);
         List<IdAble> idables = this.dbMan.getAllOfType(TypeIdManager.getTypeFromClass(ClassifiedCandidate.class));
-
         ArrayList<ClassifiedCandidate> out = new ArrayList<ClassifiedCandidate>();
-        for (IdAble idable : idables) {
-            ClassifiedCandidate c = (ClassifiedCandidate) idable;
-            if (distComp.difference(c.getCoordinate(), coord) > distmax) {
-                break;
+
+        if (coord != null) {
+            for (IdAble idable : idables) {
+                ClassifiedCandidate c = (ClassifiedCandidate) idable;
+                if (distComp.difference(c.getCoordinate(), coord) > distmax) {
+                    continue;
+                }
+                out.add(c);
             }
-            out.add(c);
+        } else {
+            for (IdAble idable : idables) {
+                ClassifiedCandidate c = (ClassifiedCandidate) idable;
+                out.add(c);
+            }
         }
         return out;
     }
@@ -252,7 +258,7 @@ public class CandidateManager {
 
         candlist.setCoordinate(cand0.getCoordinate());
         candlistStub.setCoordinate(cand0.getCoordinate());
-        
+
         candlistId = candlistStub.getId();
         Logger.getLogger(CandidateManager.class.getName()).log(Level.INFO, "Creating database stub candidates for candlist " + StringConvertable.ID.toString(candlist.getId()) + "");
 

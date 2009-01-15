@@ -165,7 +165,8 @@ img.host_status{
 
 td{
     border: #404020 solid 1px;
-    text-align: center;    
+    text-align: center;
+    padding: 0.4em;
 }
 
 table{
