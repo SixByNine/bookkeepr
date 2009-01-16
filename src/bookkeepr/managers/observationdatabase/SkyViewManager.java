@@ -26,6 +26,7 @@ import bookkeepr.xml.IdAble;
 import bookkeepr.xmlable.Configuration;
 import bookkeepr.xmlable.Pointing;
 import coordlib.Coordinate;
+import coordlib.CoordinateDistanceComparitorGalactic;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -45,10 +46,87 @@ public class SkyViewManager {
     public SkyViewManager(ObservationManager obsMan) {
         this.obsMan = obsMan;
     }
+
     public BufferedImage makeImage(List<Pointing> pointings, int height, int width) {
-        return makeImage(pointings, height, width,1,1,0,0);
+        return makeImage(pointings, height, width, 1, 1, 0, 0);
     }
-    public BufferedImage makeImage(List<Pointing> pointings, int height, int width, int xmult, int ymult ,int xoff, int yoff) {
+
+    public double[] getParamsOfImgSquare(int height, int width, int xmult, int ymult, int xoff, int yoff) {
+        
+        double maxGl = -180;
+        double minGl = 180;
+        double maxGb = -90;
+        double minGb = 90;
+        
+        double min_sep=1000000;
+        double cgl=0;
+        double cgb=0;
+        double max_sep=0;
+        double mgl=0;
+        double mgb=0;
+
+
+        for (double gl = -180; gl < 180.1; gl += 1) {
+            for (double gb = -90; gb < 90.1; gb += 1) {
+                double xl = Math.toRadians(gl);
+                double xb = Math.toRadians(gb);
+                if (xl < 0) {
+                    xl += Math.PI * 2;
+                }
+                int[] xy = aitoff(xl, xb, -90, 90, -180, 180, width * xmult, height * ymult);
+                int x = xy[0] - xoff;
+                int y = xy[1] + yoff - height * (ymult - 1);
+
+                int xxx=x-width/2;
+                int yyy=y-height/2;
+                double sep = Math.sqrt(xxx*xxx + yyy*yyy);
+                if(sep < min_sep){
+                    cgl=gl;
+                    cgb=gb;
+                    min_sep=sep;
+                }
+                if(sep > max_sep){
+                    mgl=gl;
+                    mgb=gb;
+                    max_sep=sep;
+                }
+                
+//                if (x < 0 || x >= width || y < 0 || y >= height) {
+//                    continue;
+//                } else {
+//                    if (gl > maxGl) {
+//                        maxGl = gl;
+//                        System.out.printf("%d %d %f %f\n",x,y,gl,gb);
+//                    }
+//                    if (gl < minGl) {
+//                        minGl = gl;
+//                    }
+//                    if (gb > maxGb) {
+//                        maxGb = gb;
+//                    }
+//                    if (gb < minGb) {
+//                        minGb = gb;
+//                    }
+//                }
+            }
+        }
+
+        double[] retv = new double[3];
+
+//        retv[0] = minGl + (maxGl - minGl) / 2.0;
+//        retv[1] = minGb + (maxGb - minGb) / 2.0;
+//        retv[2] = maxGb - minGb;
+        
+         retv[0] = cgl;
+         retv[1] = cgb;
+         CoordinateDistanceComparitorGalactic comp = new CoordinateDistanceComparitorGalactic(cgl,cgb);
+         retv[2] = comp.difference(mgb, mgb, cgb, cgb);
+
+        return retv;
+
+    }
+
+    public BufferedImage makeImage(List<Pointing> pointings, int height, int width, int xmult, int ymult, int xoff, int yoff) {
 
         double maxGl = 180;
         double minGl = -180;
@@ -127,12 +205,13 @@ public class SkyViewManager {
                 if (xl < 0) {
                     xl += Math.PI * 2;
                 }
-                int[] xy = aitoff(xl, xb, minGb, maxGb, minGl, maxGl, width*xmult, height*ymult);
+                int[] xy = aitoff(xl, xb, minGb, maxGb, minGl, maxGl, width * xmult, height * ymult);
                 int x = xy[0] - xoff;
-                int y = xy[1] + yoff - height*(ymult-1);
-                
-                if(x < 0 || x >= width || y < 0 || y >= height)continue;
+                int y = xy[1] + yoff - height * (ymult - 1);
 
+                if (x < 0 || x >= width || y < 0 || y >= height) {
+                    continue;
+                }
                 Color col = configToColor.get(p.getConfigurationId());
                 if (col == null) {
                     col = baseColors[nextcol];
@@ -159,7 +238,7 @@ public class SkyViewManager {
         Graphics g = img.getGraphics();
         g.setColor(new Color(0, 0, 0, 0));
         g.fillRect(0, 0, width, height);
-        
+
 
 
 //        for (int bv = 0; bv <
@@ -203,11 +282,11 @@ public class SkyViewManager {
 
 
         g.setColor(Color.WHITE);
-        for (int bv = 0; bv < ymult*height; bv++) {
-            double b = ((double) (bv) / (double) (height*ymult)) * (maxGb - minGb) + minGb;
-            int[] xy = aitoff(Math.PI, Math.toRadians(b), minGb, maxGb, minGl, maxGl, width*xmult, height*ymult);
+        for (int bv = 0; bv < ymult * height; bv++) {
+            double b = ((double) (bv) / (double) (height * ymult)) * (maxGb - minGb) + minGb;
+            int[] xy = aitoff(Math.PI, Math.toRadians(b), minGb, maxGb, minGl, maxGl, width * xmult, height * ymult);
             g.drawRect(xy[0] - xoff, xy[1] - yoff, 1, 1);
-            xy = aitoff(Math.PI + 0.000001, Math.toRadians(b), minGb, maxGb, minGl, maxGl, width*xmult, height*ymult);
+            xy = aitoff(Math.PI + 0.000001, Math.toRadians(b), minGb, maxGb, minGl, maxGl, width * xmult, height * ymult);
             g.drawRect(xy[0] - xoff, xy[1] - yoff, 1, 1);
         }
 
@@ -217,7 +296,7 @@ public class SkyViewManager {
         for (double b = -60; b < 90; b += 30) {
             int[] prev_xy = null;
             for (double l = 0; l < Math.PI - 0.001; l += (Math.PI / width)) {
-                int[] xy = aitoff(l, Math.toRadians(b), minGb, maxGb, minGl, maxGl, width*xmult, height*ymult);
+                int[] xy = aitoff(l, Math.toRadians(b), minGb, maxGb, minGl, maxGl, width * xmult, height * ymult);
                 if (prev_xy != null) {
                     g.drawLine(prev_xy[0] - xoff, prev_xy[1] - yoff, xy[0] - xoff, xy[1] - yoff);
                 }
@@ -225,7 +304,7 @@ public class SkyViewManager {
             }
             prev_xy = null;
             for (double l = Math.PI + 0.001; l < Math.PI * 2; l += (Math.PI / width)) {
-                int[] xy = aitoff(l, Math.toRadians(b), minGb, maxGb, minGl, maxGl, width*xmult, height*ymult);
+                int[] xy = aitoff(l, Math.toRadians(b), minGb, maxGb, minGl, maxGl, width * xmult, height * ymult);
                 if (prev_xy != null) {
                     g.drawLine(prev_xy[0] - xoff, prev_xy[1] - yoff, xy[0] - xoff, xy[1] - yoff);
                 }
@@ -236,7 +315,7 @@ public class SkyViewManager {
         for (double l = 30; l < 360; l += 30) {
             int[] prev_xy = null;
             for (double b = -Math.PI / 2.0; b < Math.PI / 2.0; b += (Math.PI / width)) {
-                int[] xy = aitoff(Math.toRadians(l), b, minGb, maxGb, minGl, maxGl, width*xmult, height*ymult);
+                int[] xy = aitoff(Math.toRadians(l), b, minGb, maxGb, minGl, maxGl, width * xmult, height * ymult);
                 if (prev_xy != null) {
                     g.drawLine(prev_xy[0] - xoff, prev_xy[1] - yoff, xy[0] - xoff, xy[1] - yoff);
                 }
@@ -245,7 +324,7 @@ public class SkyViewManager {
 
         }
 
-        g.drawLine(xmult*width / 2 -xoff, 0, xmult*width / 2 -xoff, ymult*height - 1 -yoff);
+        g.drawLine(xmult * width / 2 - xoff, 0, xmult * width / 2 - xoff, ymult * height - 1 - yoff);
 //        g.drawLine(0, height / 2, width, height / 2);
 
         for (int x = 0; x <
@@ -257,16 +336,16 @@ public class SkyViewManager {
                     if (done_ptg[y][x] == 0) {
                     } else {
                         g.setColor(new Color(colors[y][x].getRed(), colors[y][x].getGreen(), colors[y][x].getBlue()));
-                        g.drawRect(x, height - y -1, 1, 1);
+                        g.drawRect(x, height - y - 1, 1, 1);
                     }
 
                 } else {
                     if (done_ptg[y][x] == 0) {
                         g.setColor(new Color(colors[y][x].getRed() / 6 + 48, colors[y][x].getGreen() / 6 + 48, colors[y][x].getBlue() / 6 + 48));
-                        g.drawRect(x, height - y -1, 1, 1);
+                        g.drawRect(x, height - y - 1, 1, 1);
                     } else {
                         g.setColor(new Color(colors[y][x].getRed() / 2 + 64, colors[y][x].getGreen() / 2 + 64, colors[y][x].getBlue() / 2 + 64));
-                        g.drawRect(x, height - y -1, 1, 1);
+                        g.drawRect(x, height - y - 1, 1, 1);
                     }
 
                 }

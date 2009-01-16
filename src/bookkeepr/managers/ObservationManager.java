@@ -117,6 +117,20 @@ public class ObservationManager implements ChangeListener {
         return this.skyViewManager.makeImage(allPointings, height, width, xmult, ymult, xoff, yoff);
     }
 
+    public BufferedImage makeImage(double[] par, int height, int width, int xmult, int ymult, int xoff, int yoff) {
+        ArrayList<Pointing> ptg = null;
+        if ((float) (par[2]) < 20) {
+            ptg = this.getPointingsNear(new Coordinate(par[0], par[1]), (float) (par[2]));
+        } else {
+            ptg = allPointings;
+        }
+        return this.skyViewManager.makeImage(ptg, height, width, xmult, ymult, xoff, yoff);
+    }
+
+    public double[] getParamsOfImgSquare(int height, int width, int xmult, int ymult, int xoff, int yoff) {
+        return skyViewManager.getParamsOfImgSquare(height, width, xmult, ymult, xoff, yoff);
+    }
+
     public PointingIndex getPointings(PointingSelectRequest req) {
         return this.pointingsManager.getPointings(req);
 

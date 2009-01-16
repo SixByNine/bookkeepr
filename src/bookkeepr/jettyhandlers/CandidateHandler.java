@@ -59,6 +59,7 @@ import bookkeepr.xmlable.CandListSelectionRequest;
 import bookkeepr.xmlable.CandidateListIndex;
 import bookkeepr.xmlable.ClassifiedCandidate;
 import bookkeepr.xmlable.ClassifiedCandidateIndex;
+import bookkeepr.xmlable.ClassifiedCandidateSelectRequest;
 import bookkeepr.xmlable.Processing;
 import bookkeepr.xmlable.Psrxml;
 import bookkeepr.xmlable.RawCandidateMatched;
@@ -251,8 +252,36 @@ public class CandidateHandler extends AbstractHandler {
                     out.close();
 
                     return;
+                } else if(request.getMethod().equals("POST")){
+                    // post a CandidateSelectRequest
+                    ClassifiedCandidateSelectRequest ccsreq = null;
+                    try {
+                        XMLAble xmlable = XMLReader.read(request.getInputStream());
+                        if (xmlable instanceof ClassifiedCandidateSelectRequest) {
+                            ccsreq = (ClassifiedCandidateSelectRequest) xmlable;
+                        } else {
+                            response.sendError(400, "Bad item posted to /cand/classified for Searching");
+                            return;
+                        }
+                    } catch (SAXException ex) {
+                        response.sendError(400, "Bad item posted to /cand/classified for Searching");
+                        return;
+                    }
+                    
+                    // reply with the searched index
+                    ClassifiedCandidateIndex idx = candMan.searchCandidates(ccsreq);
+                    OutputStream out = response.getOutputStream();
+                    String hdr = request.getHeader("Accept-Encoding");
+                    if (hdr != null && hdr.contains("gzip")) {
+                        // if the host supports gzip encoding, gzip the output for quick transfer speed.
+                        out = new GZIPOutputStream(out);
+                        response.setHeader("Content-Encoding", "gzip");
+                    }
+                    XMLWriter.write(out, idx);
+                    out.close();
+                    
                 } else {
-                    response.sendError(400, "Bad non-GET request /cand/classified");
+                    response.sendError(400, "Bad non-POST/GET request /cand/classified");
                     return;
                 }
             } else if (path.startsWith("/cand/newclassified")) {

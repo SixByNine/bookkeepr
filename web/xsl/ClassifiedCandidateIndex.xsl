@@ -16,10 +16,19 @@
 		</xsl:template>
 
 
-	<xsl:template match="classified_candidate">
-		<tr class="cl{cand_class_int}">
-			<xsl:apply-templates select="raw_candidate_matched[prefered='true']"/>
-		</tr>
+		<xsl:template match="classified_candidate">
+			<xsl:choose>
+				<xsl:when test="raw_candidate_matched[prefered='true']">
+					<tr class="cl{cand_class_int}">
+						<xsl:apply-templates select="raw_candidate_matched[prefered='true']"/>
+					</tr>
+
+
+				</xsl:when>
+				<xsl:otherwise>
+				</xsl:otherwise>
+			</xsl:choose>
+
 	</xsl:template>
 	<xsl:template match="raw_candidate_matched">
 

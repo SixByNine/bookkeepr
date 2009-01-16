@@ -33,12 +33,20 @@ public class CandidateSearchManager {
 
     CandidateManager candMan;
 
+    public CandidateSearchManager(CandidateManager candMan) {
+        this.candMan = candMan;
+    }
+
+     
+    
+    
     public ClassifiedCandidateIndex searchCandidates(ClassifiedCandidateSelectRequest req) {
 
         ArrayList<ClassifiedCandidate> list = candMan.getClassifiedCandidatesNear(req.getTarget(), req.getTargetSeperation());
         ArrayList<ClassifiedCandidate> newlist = null;
-        
+        System.out.println("TESTX "+list.size());
         if(req.getCandClassInt() >= 0){
+            System.out.println("TEST1 "+req.getCandClassInt());
             newlist = new ArrayList<ClassifiedCandidate>();
             for(ClassifiedCandidate c : list){
                 if(c.getCandClassInt()==req.getCandClassInt()){
@@ -75,7 +83,9 @@ public class CandidateSearchManager {
         
 
         ClassifiedCandidateIndex idx = new ClassifiedCandidateIndex();
-
+        for(ClassifiedCandidate c : list){
+            idx.addClassifiedCandidate(c);
+        }
 
 
         return idx;

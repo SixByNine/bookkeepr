@@ -54,10 +54,14 @@ import bookkeepr.xmlable.Pointing;
 import bookkeepr.xmlable.PointingIndex;
 import bookkeepr.xmlable.Psrxml;
 import bookkeepr.xmlable.PsrxmlIndex;
-import java.awt.Color;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Formatter;
 import java.util.HashMap;
@@ -77,11 +81,82 @@ public class ObservationHandler extends AbstractHandler {
     ObservationManager observationManager;
     HashMap<Integer, BufferedImage> images = new HashMap<Integer, BufferedImage>();
     HashMap<Integer, Date> imageDates = new HashMap<Integer, Date>();
+    ArrayList<double[][][]> tileParams = null;
 
     public ObservationHandler(BookKeepr bookkeepr, DatabaseManager manager, ObservationManager observationManager) {
         this.bookkeepr = bookkeepr;
         this.manager = manager;
         this.observationManager = observationManager;
+    }
+
+    private void initTileParams() {
+
+
+        int maxdepth = 6;
+        int tilesize = 128;
+
+        File cachefile = new File(observationManager.getDbManager().getRootPath() + File.separator + "skyview." + maxdepth + "." + tilesize + ".cache");
+
+        try {
+
+            this.tileParams = new ArrayList(maxdepth);
+            if (cachefile.canRead()) {
+                Logger.getLogger(ObservationHandler.class.getName()).log(Level.INFO, "loading SkyView cace file " + cachefile.getPath());
+
+                BufferedReader reader = new BufferedReader(new FileReader(cachefile));
+                for (int i = 0; i <= maxdepth; i++) {
+                    int level = (int) (Math.pow(2, i));
+                    double[][][] par = new double[level][level][3];
+
+                    for (int row = 0; row < level; row++) {
+                        for (int col = 0; col < level; col++) {
+                            String line = reader.readLine();
+                            String[] elems = line.split("\\s+");
+                            par[row][col][0] = Double.parseDouble(elems[3]);
+                            par[row][col][1] = Double.parseDouble(elems[4]);
+                            par[row][col][2] = 1.5*180.0/level; //Double.parseDouble(elems[5]);
+
+                        }
+                    }
+                    this.tileParams.add(i, par);
+                }
+                reader.close();
+                return;
+
+            }
+
+        } catch (Exception e) {
+            Logger.getLogger(ObservationHandler.class.getName()).log(Level.WARNING, "Error Loading SkyView cache file", e);
+        }
+
+        this.tileParams = new ArrayList(maxdepth);
+        try {
+            PrintStream out = new PrintStream(new FileOutputStream(cachefile));
+            for (int i = 0; i <= maxdepth; i++) {
+                int level = (int) (Math.pow(2, i));
+                double[][][] par = new double[level][level][3];
+                Logger.getLogger(ObservationHandler.class.getName()).log(Level.INFO, "Intialising SkyView level " + i + " (" + level + ")");
+
+                for (int row = 0; row < level; row++) {
+                    for (int col = 0; col < level; col++) {
+                        double[] vvv = observationManager.getParamsOfImgSquare(tilesize, tilesize, level, level, col * tilesize, row * tilesize);
+                        par[row][col][0] = vvv[0];
+                        par[row][col][1] = vvv[1];
+                        par[row][col][2] = 1.5*180.0/level;
+                        out.printf("%d %d %d %f %f %f\n", level, row, col, vvv[0], vvv[1], 1.5*180.0/level);
+                    }
+                }
+
+                this.tileParams.add(i, par);
+            }
+            out.close();
+            Logger.getLogger(ObservationHandler.class.getName()).log(Level.INFO, "SkyView initialisation complete.");
+
+        } catch (Exception e) {
+            Logger.getLogger(ObservationHandler.class.getName()).log(Level.WARNING, "Error creating SkyView cache file", e);
+
+        }
+
     }
 
     /**
@@ -189,9 +264,15 @@ public class ObservationHandler extends AbstractHandler {
 
             } else if (path.startsWith("/obs/map/")) {
                 if (path.startsWith("/obs/map/tiles/")) {
+                    synchronized (this) {
+                        if (tileParams == null) {
+                            initTileParams();
+                        }
+                    }
                     String[] elems = path.substring(19).split("-|\\.png");
                     if (elems.length > 2) {
-                        int level = (int) (Math.pow(2, Integer.parseInt(elems[0])));
+                        int nlev = Integer.parseInt(elems[0]);
+                        int level = (int) (Math.pow(2, nlev));
                         //int level = Integer.parseInt(elems[0]) + 1;
                         int row = Integer.parseInt(elems[2]);
                         int col = Integer.parseInt(elems[1]);
@@ -226,7 +307,7 @@ public class ObservationHandler extends AbstractHandler {
 //                        }
 
                         BufferedImage img;
-                        img = observationManager.makeImage(tilesize, tilesize, level, level, col * tilesize, row * tilesize);
+                        img = observationManager.makeImage(this.tileParams.get(nlev)[row][col], tilesize, tilesize, level, level, col * tilesize, row * tilesize);
                         response.setContentType("image/png");
                         ImageIO.write(img, "PNG", response.getOutputStream());
                         response.getOutputStream().close();

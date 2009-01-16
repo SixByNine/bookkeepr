@@ -32,6 +32,8 @@ import bookkeepr.xmlable.CandidateList;
 import bookkeepr.xmlable.CandidateListIndex;
 import bookkeepr.xmlable.CandidateListStub;
 import bookkeepr.xmlable.ClassifiedCandidate;
+import bookkeepr.xmlable.ClassifiedCandidateIndex;
+import bookkeepr.xmlable.ClassifiedCandidateSelectRequest;
 import bookkeepr.xmlable.DatabaseManager;
 import bookkeepr.xmlable.RawCandidate;
 import bookkeepr.xmlable.RawCandidateBasic;
@@ -66,11 +68,17 @@ public class CandidateManager {
     private String rootPath;
     private DatabaseManager dbMan;
     private CandidateMatchingManager candMatcher;
+    private CandidateSearchManager candSearchMan;
 
     public CandidateManager(String rootPath, DatabaseManager dbMan, BackgroundTaskRunner bgRunner) {
         this.rootPath = rootPath;
         this.dbMan = dbMan;
         candMatcher = new CandidateMatchingManager(dbMan, this, bgRunner);
+        candSearchMan = new CandidateSearchManager(this);
+    }
+
+    public ClassifiedCandidateIndex searchCandidates(ClassifiedCandidateSelectRequest req) {
+        return candSearchMan.searchCandidates(req);
     }
 
     public File getRawCandidateFile(RawCandidateStub rawCandStub) {
@@ -207,11 +215,12 @@ public class CandidateManager {
     }
 
     public ArrayList<ClassifiedCandidate> getClassifiedCandidatesNear(Coordinate coord, double distmax) {
-        CoordinateDistanceComparitor distComp = new CoordinateDistanceComparitor(coord);
+
         List<IdAble> idables = this.dbMan.getAllOfType(TypeIdManager.getTypeFromClass(ClassifiedCandidate.class));
         ArrayList<ClassifiedCandidate> out = new ArrayList<ClassifiedCandidate>();
 
         if (coord != null) {
+            CoordinateDistanceComparitor distComp = new CoordinateDistanceComparitor(coord);
             for (IdAble idable : idables) {
                 ClassifiedCandidate c = (ClassifiedCandidate) idable;
                 if (distComp.difference(c.getCoordinate(), coord) > distmax) {
