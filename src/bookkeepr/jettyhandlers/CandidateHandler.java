@@ -67,6 +67,7 @@ import bookkeepr.xmlable.Session;
 import bookkeepr.xmlable.ViewedCandidates;
 import bookkeepr.xmlable.ViewedCandidatesIndex;
 import java.awt.image.BufferedImage;
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
 import javax.imageio.ImageIO;
@@ -221,6 +222,38 @@ public class CandidateHandler extends AbstractHandler {
                     response.sendError(400, "Bad non-GET/POST request /cand/viewed");
                     return;
                 }
+            } else if (path.startsWith("/cand/psrcat")) {
+                if (request.getMethod().equals("GET")) {
+                    String[] elems = path.substring(1).split("/");
+                    if (elems.length > 2) {
+                        try {
+                            long id = Long.parseLong(elems[2], 16);
+                            ClassifiedCandidate cand = (ClassifiedCandidate) dbMan.getById(id);
+                            String str = cand.getPsrcatEntry().toString();
+                            response.setContentType("text/plain");
+                            OutputStream out = response.getOutputStream();
+                            String hdr = request.getHeader("Accept-Encoding");
+                            if (hdr != null && hdr.contains("gzip")) {
+                                // if the host supports gzip encoding, gzip the output for quick transfer speed.
+                                out = new GZIPOutputStream(out);
+                                response.setHeader("Content-Encoding", "gzip");
+                            }
+                            PrintWriter wr = new PrintWriter(out);
+                            wr.write(str);
+                            wr.close();
+                            out.close();
+
+                        } catch (ClassCastException ex) {
+                            Logger.getLogger(CandidateHandler.class.getName()).log(Level.WARNING, "Invalid candidate id passed to /cand/psrcat", ex);
+                            response.sendError(400, "Bad id in request for /cand/psrcat");
+                        }
+                    } else {
+                        response.sendError(400, "Bad request for /cand/psrcat");
+                    }
+                } else {
+                    response.sendError(400, "Bad non-GET request for /cand/psrcat");
+
+                }
             } else if (path.startsWith("/cand/classified")) {
                 if (request.getMethod().equals("GET")) {
                     String[] elems = path.substring(1).split("/");
@@ -252,7 +285,7 @@ public class CandidateHandler extends AbstractHandler {
                     out.close();
 
                     return;
-                } else if(request.getMethod().equals("POST")){
+                } else if (request.getMethod().equals("POST")) {
                     // post a CandidateSelectRequest
                     ClassifiedCandidateSelectRequest ccsreq = null;
                     try {
@@ -267,7 +300,7 @@ public class CandidateHandler extends AbstractHandler {
                         response.sendError(400, "Bad item posted to /cand/classified for Searching");
                         return;
                     }
-                    
+
                     // reply with the searched index
                     ClassifiedCandidateIndex idx = candMan.searchCandidates(ccsreq);
                     OutputStream out = response.getOutputStream();
@@ -279,7 +312,7 @@ public class CandidateHandler extends AbstractHandler {
                     }
                     XMLWriter.write(out, idx);
                     out.close();
-                    
+
                 } else {
                     response.sendError(400, "Bad non-POST/GET request /cand/classified");
                     return;

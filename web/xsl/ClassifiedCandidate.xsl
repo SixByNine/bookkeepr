@@ -19,6 +19,12 @@
 				<img style="float:left; clear:both;" src="/cand/{id}/800x600.png" />
 			</xsl:for-each>
 		</p>
+		<h4>Resources</h4>
+		<p style="clear: both;">
+		<ul>
+			<li>Generate <a href="/cand/psrcat/{id}">psrcat entry</a>.</li>
+		</ul>
+	</p>
 
 		<h4>Associated candidates</h4>
 		<table style="clear:both;">

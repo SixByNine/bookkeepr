@@ -35,7 +35,7 @@
 		<td><xsl:value-of select="../cand_class_int" /></td>
 		<td><xsl:value-of select="../obs_status" /></td>
 		<td><xsl:value-of select="../conf_status" /></td>
-		<td><a href="/cand/{id}"><xsl:value-of select="../name"/></a></td>
+		<td><a href="/id/{../id}"><xsl:value-of select="../name"/></a></td>
 		<td><xsl:value-of select="../coordinate"/></td>
 		<td><xsl:value-of select="bary_period"/></td>
 		<td><xsl:value-of select="fold_snr" /></td>
