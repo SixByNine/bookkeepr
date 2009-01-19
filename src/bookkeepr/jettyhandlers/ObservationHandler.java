@@ -543,7 +543,7 @@ public class ObservationHandler extends AbstractHandler {
     }
 
     private void queryPsrxml(Psrxml request, HttpServletResponse response) {
-        Logger.getLogger(ObservationHandler.class.getName()).log(Level.FINE, "Received a PsrXML file for insertion.");
+        Logger.getLogger(ObservationHandler.class.getName()).log(Level.FINE, "Received a query for a matching PsrXML file.");
         Psrxml out = null;
         try {
 
