@@ -187,6 +187,11 @@ public class ObservationManager implements ChangeListener {
     public void addPsrXML(Psrxml header) throws PointingNotFoundException, BookKeeprException {
         psrxmlManager.addPsrXML(header);
     }
+    
+    
+    public Psrxml queryPsrXML(Psrxml header) throws PointingNotFoundException, BookKeeprException {
+        return psrxmlManager.queryPsrXML(header);
+    }
 
     public void addPsrXML(Psrxml header, Session session) throws PointingNotFoundException, BookKeeprException {
         psrxmlManager.addPsrXML(header, session);

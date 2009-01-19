@@ -114,7 +114,7 @@ public class ObservationHandler extends AbstractHandler {
                             String[] elems = line.split("\\s+");
                             par[row][col][0] = Double.parseDouble(elems[3]);
                             par[row][col][1] = Double.parseDouble(elems[4]);
-                            par[row][col][2] = 1.5*180.0/level; //Double.parseDouble(elems[5]);
+                            par[row][col][2] = 1.5 * 180.0 / level; //Double.parseDouble(elems[5]);
 
                         }
                     }
@@ -142,8 +142,8 @@ public class ObservationHandler extends AbstractHandler {
                         double[] vvv = observationManager.getParamsOfImgSquare(tilesize, tilesize, level, level, col * tilesize, row * tilesize);
                         par[row][col][0] = vvv[0];
                         par[row][col][1] = vvv[1];
-                        par[row][col][2] = 1.5*180.0/level;
-                        out.printf("%d %d %d %f %f %f\n", level, row, col, vvv[0], vvv[1], 1.5*180.0/level);
+                        par[row][col][2] = 1.5 * 180.0 / level;
+                        out.printf("%d %d %d %f %f %f\n", level, row, col, vvv[0], vvv[1], 1.5 * 180.0 / level);
                     }
                 }
 
@@ -204,6 +204,31 @@ public class ObservationHandler extends AbstractHandler {
                             // submit psrxmls as an index, JUST FOR TESTING!
                             handle((PsrxmlIndex) xmlable, response);
 
+                            return;
+                        } else {
+                            response.sendError(400, "Submitted request was not understood");
+                            return;
+                        }
+
+                    } catch (SAXException ex) {
+                        response.sendError(400, "Submitted request was malformed\nMessage was '" + ex.getMessage() + "'");
+                        Logger.getLogger(ObservationHandler.class.getName()).log(Level.INFO, "Recieved malformed request");
+                        return;
+                    }
+
+                } else {
+                    response.sendError(400, "Submitted request was not understood: Not a POST message");
+                    Logger.getLogger(ObservationHandler.class.getName()).log(Level.INFO, "Recieved malformed request");
+                    return;
+                }
+
+            } else if (path.equals("/obs/querypsrxml")) {
+                if (request.getMethod().equals("POST")) {
+                    try {
+                        XMLAble xmlable = (XMLAble) XMLReader.read(request.getInputStream());
+                        if (xmlable instanceof Psrxml) {
+                            //XMLWriter.write(new FileOutputStream("test.psrxml"), xmlable);
+                            this.queryPsrxml((Psrxml) xmlable, response);
                             return;
                         } else {
                             response.sendError(400, "Submitted request was not understood");
@@ -370,8 +395,7 @@ public class ObservationHandler extends AbstractHandler {
 
                 }
 
-            }
-            if (path.equals("/obs/dumpptg")) {
+            } else if (path.equals("/obs/dumpptg")) {
                 response.setContentType("application/gzip");
                 List list = manager.getAllOfType(TypeIdManager.getTypeFromClass(Pointing.class));
                 PrintStream out = new PrintStream(new GZIPOutputStream(response.getOutputStream()));
@@ -516,5 +540,28 @@ public class ObservationHandler extends AbstractHandler {
         }
 
 
+    }
+
+    private void queryPsrxml(Psrxml request, HttpServletResponse response) {
+        Logger.getLogger(ObservationHandler.class.getName()).log(Level.FINE, "Received a PsrXML file for insertion.");
+        Psrxml out = null;
+        try {
+
+
+            try {
+                out = this.observationManager.queryPsrXML(request);
+            } catch (PointingNotFoundException ex) {
+                Logger.getLogger(ObservationHandler.class.getName()).log(Level.WARNING, "Grid ID issue with psrxml file. " + ex.getMessage(), ex);
+                response.sendError(500, ex.getMessage());
+            } catch (BookKeeprException ex) {
+                Logger.getLogger(ObservationHandler.class.getName()).log(Level.WARNING, "Issue updating database", ex);
+                response.sendError(500, ex.getMessage());
+            }
+            XMLWriter.write(response.getOutputStream(), out);
+
+
+        } catch (IOException ex) {
+            Logger.getLogger(ObservationHandler.class.getName()).log(Level.WARNING, "IOException writing to client", ex);
+        }
     }
 }

@@ -47,7 +47,9 @@ public class PsrXMLManager {
         addPsrXML(header, session);
         obsmanager.getDbManager().save(session);
     }
-
+    
+    
+    
     public void addPsrXML(Psrxml header, Session session) throws PointingNotFoundException, BookKeeprException {
 
         String gridID = header.getSourceNameCentreBeam();
@@ -94,6 +96,14 @@ public class PsrXMLManager {
             // there is a problem... we have too many or too few matches
             throw new PointingNotFoundException("No pointings mached GridId " + gridID + ". This means that the PsrXML file cannot be added to the database.");
         }
+    }
+    
+    
+    
+     public Psrxml queryPsrXML(Psrxml header) throws PointingNotFoundException {
+                     Psrxml repl = this.obsmanager.getPsrxmlFromUtcBeam(header.getUtc(), header.getReceiverBeam());
+                     if(repl==null)throw new PointingNotFoundException("Could not find matching PsrXML file");
+                     return repl;
     }
 
     public class PointingNotFoundException extends BookKeeprException {
