@@ -9,6 +9,7 @@
 
 	<xsl:template match="candidate_list">
 		<h3><xsl:value-of select="name" />: <xsl:value-of select="completed_date" /></h3>
+		<p><a href="/id/{psrxml_id}">Psrxml Header</a></p>
 		<table style="clear:both;">
 			<tr>
 				<th>Bary Period</th><th>Fold Snr</th>
