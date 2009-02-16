@@ -222,7 +222,7 @@ public class ObservationHandler extends AbstractHandler {
                     return;
                 }
 
-            } else if (path.equals("/obs/querypsrxml")) {
+            } else if (path.startsWith("/obs/querypsrxml")) {
                 if (request.getMethod().equals("POST")) {
                     try {
                         XMLAble xmlable = (XMLAble) XMLReader.read(request.getInputStream());
@@ -241,8 +241,57 @@ public class ObservationHandler extends AbstractHandler {
                         return;
                     }
 
+                } else if (request.getMethod().equals("GET")) {
+                    String[] elems = regex.split(path.substring(2));
+                    if (elems.length > 3) {
+                        StringBuffer utcstr = new StringBuffer(elems[2]);
+                        String beamstr = elems[3];
+                        utcstr.replace(10, 11, "T");
+                        utcstr.replace(13, 14, ":");
+                        utcstr.replace(16, 17, ":");
+                        utcstr.replace(19, 20, "Z");
+                        Psrxml header = this.observationManager.getPsrxmlFromUtcBeam(utcstr.toString(), Integer.parseInt(beamstr));
+                        if (header == null) {
+                            response.sendError(404, "No psrxml found with utc=" + utcstr + " and beam=" + beamstr);
+                        } else {
+
+                            OutputStream out = response.getOutputStream();
+                            String hdr = request.getHeader("Accept-Encoding");
+                            if (hdr != null && hdr.contains("gzip")) {
+                                // if the host supports gzip encoding, gzip the output for quick transfer speed.
+                                out = new GZIPOutputStream(out);
+                                response.setHeader("Content-Encoding", "gzip");
+                            }
+                            XMLWriter.write(out, header);
+                        }
+
+                    }
                 } else {
                     response.sendError(400, "Submitted request was not understood: Not a POST message");
+                    Logger.getLogger(ObservationHandler.class.getName()).log(Level.INFO, "Recieved malformed request");
+                    return;
+                }
+
+            } else if (path.equals("/obs/checkptgs")) {
+                if (request.getMethod().equals("GET")) {
+                    response.setContentType("text/plain");
+                    OutputStream out = response.getOutputStream();
+                    String hdr = request.getHeader("Accept-Encoding");
+                    if (hdr != null && hdr.contains("gzip")) {
+                        // if the host supports gzip encoding, gzip the output for quick transfer speed.
+                        out = new GZIPOutputStream(out);
+                        response.setHeader("Content-Encoding", "gzip");
+                    }
+
+                    List<String> sepns = this.observationManager.getPointingObsnErrors();
+                    PrintStream ps = new PrintStream(out);
+                    for (String f : sepns) {
+                        ps.println(f);
+                    }
+                    ps.close();
+
+                } else {
+                    response.sendError(400, "Submitted request was not understood: Not a GET message");
                     Logger.getLogger(ObservationHandler.class.getName()).log(Level.INFO, "Recieved malformed request");
                     return;
                 }

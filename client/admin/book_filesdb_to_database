@@ -1,0 +1,52 @@
+#!/bin/bash
+
+server=$1
+infile=$2
+location="UNKNOWN"
+
+while read line
+do
+	utcbeam=`echo $line | awk '{print $1}' | sed -e "s%:%-%g"`
+	label=`echo $line | awk '{print $2}'`
+	datewritten=`echo $line | awk '{print $3}' | sed 's%.*\(....-..-..\)-\(..:..:..\).*%\1T\2+11%g'`
+	size=`echo $line | awk '{printf("%4.4f", $4)}'`
+	fnum=`echo $line | awk '{print $5}'`
+
+	url="http://$server/obs/querypsrxml/$utcbeam" 
+	wget -q -O - $url &> good.xml
+
+	if [[ `wc -l good.xml | awk '{print $1}'` > 0 ]]
+	then
+		echo $utcbeam "good"
+		psrxmlid=`grep -e '<id>.*</id>' good.xml | head -n 1 | sed -e 's:.*<id>\(.*\)</id>.*:\1:'`
+
+		$BOOKKEEPR_CLIENT/util/get.py http://$server/storage/label/$label &> tape.xml
+		if [[ $? != 0 ]]
+		then
+			# need to create a new tape!
+			$BOOKKEEPR_CLIENT/admin/book_create_tape $server $label $location &> tape.xml
+			ret=$?
+	                if [[ $ret != 0 ]]
+			then
+				echo "COULD NOT CREATE TAPE $label IN THE DATABASE!"
+				exit $ret
+			fi
+		fi
+
+		tapeid=`grep -e '<id>.*</id>' tape.xml | head -n 1 | sed -e 's:.*<id>\(.*\)</id>.*:\1:'`
+
+		echo "<?xml version='1.0'?>
+		<archived_storage_write>
+		<storage_id>$tapeid</storage_id>
+		<psrxml_id>$psrxmlid</psrxml_id>
+		<date_written>$datewritten</date_written>
+		<file_label>$fnum</file_label>
+		<write_size>$size</write_size>
+		</archived_storage_write>" | $BOOKKEEPR_CLIENT/util/xmlposter.py http://$server/storage/
+
+		rm tape.xml
+	else
+		echo $utcbeam "bad"
+	fi
+	rm good.xml
+done < $infile

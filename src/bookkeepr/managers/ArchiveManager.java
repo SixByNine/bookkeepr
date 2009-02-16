@@ -41,6 +41,7 @@ public class ArchiveManager implements ChangeListener {
     private HashMap<String, ArchivedStorage> label2Storage = new HashMap<String, ArchivedStorage>();
     private HashMap<Long, ArchivedStorageIndex> psrxml2Storage = new HashMap<Long, ArchivedStorageIndex>();
     private HashMap<Long, PsrxmlIndex> storage2Psrxml = new HashMap<Long, PsrxmlIndex>();
+    private HashMap<String, ArchivedStorageWrite> uniqueWrites = new HashMap<String, ArchivedStorageWrite>();
     private ArrayList<ArchivedStorageWrite> orphanedWrites = new ArrayList<ArchivedStorageWrite>();
 
     public ArchiveManager(DatabaseManager dbman) {
@@ -62,6 +63,11 @@ public class ArchiveManager implements ChangeListener {
         return this.storage2Psrxml.get(id);
     }
 
+    public ArchivedStorageWrite checkUnique(ArchivedStorageWrite write){
+        String key = write.getStorageId()+write.getFileLabel(); // Nothing can have the same storage id and label!
+        return uniqueWrites.get(key);
+    }
+    
     public void itemUpdated(DatabaseManager dbMan, IdAble item, boolean remoteChange, boolean isModified) {
         if (item instanceof ArchivedStorage) {
             ArchivedStorage storage = (ArchivedStorage) item;
@@ -80,6 +86,9 @@ public class ArchiveManager implements ChangeListener {
             }
         } else if (item instanceof ArchivedStorageWrite) {
             ArchivedStorageWrite write = (ArchivedStorageWrite) item;
+            String key = write.getStorageId()+write.getFileLabel();
+            if(checkUnique(write)==null)uniqueWrites.put(key, write);
+                    
             if (!makeLink(write)) {
                 synchronized (this.orphanedWrites) {
                     orphanedWrites.add(write);

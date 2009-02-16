@@ -152,9 +152,21 @@ public class ArchivedStorageHandler extends AbstractHandler {
                         this.dbMan.save(session);
                         XMLWriter.write(response.getOutputStream(), xmlable);
                         response.getOutputStream().close();
-                    } else if (xmlable instanceof ArchivedStorageWrite){
+                    } else if (xmlable instanceof ArchivedStorageWrite) {
                         ArchivedStorageWrite write = (ArchivedStorageWrite) xmlable;
-                        // should have some sanity checks here...
+                        ArchivedStorageWrite existing = this.archiveMan.checkUnique(write);
+
+                        if (existing != null) {
+                            write.setId(existing.getId()); // replace the existing entry with the new one.
+                            if (write.equals(existing)) {
+                                XMLWriter.write(response.getOutputStream(), existing);
+                                response.getOutputStream().close();
+                                Logger.getLogger(ObservationHandler.class.getName()).log(Level.INFO, "Not replacing identical storage write.");
+
+                                return;
+                            }
+                        }
+
                         Logger.getLogger(ObservationHandler.class.getName()).log(Level.INFO, "Inserting Item into database");
                         Session session = new Session();
                         this.dbMan.add(write, session);

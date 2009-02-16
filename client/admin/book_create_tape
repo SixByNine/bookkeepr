@@ -20,7 +20,7 @@ ret=`echo "<?xml version='1.0'?>
 <storage_location>$tapeloc</storage_location>
 </archived_storage>" | $BOOKKEEPR_CLIENT/util/xmlposter.py http://$server/storage/`
 ex=$?
-echo $ret | html2text
+echo $ret
 if [[ $ex -ne 0 ]]
 then
 	echo "An error occured sending to the database"

@@ -22,6 +22,7 @@ import bookkeepr.xmlable.Receiver;
 import bookkeepr.xmlable.Session;
 import bookkeepr.xmlable.Telescope;
 import coordlib.Coordinate;
+import coordlib.CoordinateDistanceComparitor;
 import coordlib.CoordinateDistanceComparitorGalactic;
 import java.awt.image.BufferedImage;
 import java.io.PrintWriter;
@@ -356,4 +357,30 @@ public class ObservationManager implements ChangeListener {
             }
         }
     }
+    
+    
+    public List<String> getPointingObsnErrors(){
+        ArrayList<String> sepns = new ArrayList<String>();
+        CoordinateDistanceComparitorGalactic cdc = new CoordinateDistanceComparitorGalactic(0,0);
+        for(Psrxml header : this.getAllObservations()){
+            Pointing ptg = (Pointing) this.dbManager.getById(header.getPointingId());
+            double min = 100000000;
+            Coordinate closest=null;
+            for(Coordinate c : ptg.getCoverage()){
+                double dist = cdc.difference(header.getStartCoordinate().getGl(), header.getStartCoordinate().getGb(), c.getGl(), c.getGb());
+                if (dist < min){
+                    min=dist;
+                    closest=c;
+                }
+            }
+            if(min > 30.0/3600.0){
+                System.out.printf("%s %s\n",header.getStartCoordinate().toString(true),closest.toString(true) );
+            }
+            sepns.add(ptg.getGridId() + "\t"+header.getDataFiles().get(0).getFilename()+"\t"+(min*3600));
+        }
+        
+        return sepns;
+        
+    }
+    
 }
