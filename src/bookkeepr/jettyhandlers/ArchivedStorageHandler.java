@@ -158,6 +158,7 @@ public class ArchivedStorageHandler extends AbstractHandler {
 
                         if (existing != null) {
                             write.setId(existing.getId()); // replace the existing entry with the new one.
+
                             if (write.equals(existing)) {
                                 XMLWriter.write(response.getOutputStream(), existing);
                                 response.getOutputStream().close();
@@ -173,6 +174,40 @@ public class ArchivedStorageHandler extends AbstractHandler {
                         this.dbMan.save(session);
                         XMLWriter.write(response.getOutputStream(), xmlable);
                         response.getOutputStream().close();
+                    }
+                } catch (BookKeeprException ex) {
+                    Logger.getLogger(ArchivedStorageHandler.class.getName()).log(Level.WARNING, ex.getMessage(), ex);
+                    response.sendError(500, "BookKeepr error writing to database...");
+                } catch (SAXException ex) {
+                    Logger.getLogger(ArchivedStorageHandler.class.getName()).log(Level.INFO, ex.getMessage(), ex);
+                }
+            } else if (path.startsWith("/storage/relocate")) {
+                try {
+                    ((Request) request).setHandled(true);
+                    String[] elems = regex.split(path.substring(1));
+
+
+                    String label = elems[2];
+                    ArchivedStorage storage = archiveMan.getStorageByLabel(label);
+                    if (storage != null) {
+                        Logger.getLogger(ArchivedStorageHandler.class.getName()).log(Level.INFO, "Relocating Storage with label " + label);
+                        XMLAble xmlable = (XMLAble) XMLReader.read(request.getInputStream());
+                        ArchivedStorage newloc = (ArchivedStorage) xmlable;
+                        newloc.setId(storage.getId());
+                        newloc.setMediaLabel(label);
+                        newloc.setMediaType(storage.getMediaType());
+                        Session session = new Session();
+                        
+                        this.dbMan.add(newloc, session);
+                        this.dbMan.save(session);
+
+                        XMLWriter.write(response.getOutputStream(), newloc);
+                        response.getOutputStream().close();
+                    } else {
+                        Logger.getLogger(ArchivedStorageHandler.class.getName()).log(Level.INFO, "Did not find Storage with label " + label);
+
+                        response.sendError(404, "Requested media label not found");
+                        return;
                     }
                 } catch (BookKeeprException ex) {
                     Logger.getLogger(ArchivedStorageHandler.class.getName()).log(Level.WARNING, ex.getMessage(), ex);
