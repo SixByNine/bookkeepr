@@ -15,7 +15,7 @@ fi
 
 ret=`echo "<?xml version='1.0'?>
 <archived_storage>
-<media_type>TAPE</media_type>
+<media_type>DLT-S4</media_type>
 <media_label>$tapelabel</media_label>
 <storage_location>$tapeloc</storage_location>
 </archived_storage>" | $BOOKKEEPR_CLIENT/util/xmlposter.py http://$server/storage/`
