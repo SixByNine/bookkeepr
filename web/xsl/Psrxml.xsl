@@ -13,6 +13,7 @@
 		<h2>Observation: <xsl:value-of select="source_name" /></h2>
 		<h3>PsrXML header</h3>
 		<p style="clear:both;"><a href="/id/raw/{id}">Download psrxml file</a></p>
+		<p style="clear:both;"><a href="/storage/{id}">Locate copies on Tape</a></p>
 		<table style="clear:both;">
 			<tr><th>Key</th><th>Value</th></tr>
 			<tr><td>Source Name</td><td><xsl:value-of select="source_name" /></td></tr>

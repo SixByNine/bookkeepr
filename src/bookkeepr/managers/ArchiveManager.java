@@ -21,12 +21,16 @@
 package bookkeepr.managers;
 
 import bookkeepr.xml.IdAble;
+import bookkeepr.xml.StringConvertable;
 import bookkeepr.xmlable.ArchivedStorage;
 import bookkeepr.xmlable.ArchivedStorageIndex;
 import bookkeepr.xmlable.ArchivedStorageWrite;
+import bookkeepr.xmlable.ArchivedStorageWriteExtended;
+import bookkeepr.xmlable.ArchivedStorageWriteIndex;
 import bookkeepr.xmlable.DatabaseManager;
 import bookkeepr.xmlable.Psrxml;
 import bookkeepr.xmlable.PsrxmlIndex;
+import java.text.StringCharacterIterator;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -41,6 +45,7 @@ public class ArchiveManager implements ChangeListener {
     private HashMap<String, ArchivedStorage> label2Storage = new HashMap<String, ArchivedStorage>();
     private HashMap<Long, ArchivedStorageIndex> psrxml2Storage = new HashMap<Long, ArchivedStorageIndex>();
     private HashMap<Long, PsrxmlIndex> storage2Psrxml = new HashMap<Long, PsrxmlIndex>();
+    private HashMap<Long, ArchivedStorageWriteIndex> storage2Writes = new HashMap<Long, ArchivedStorageWriteIndex>();
     private HashMap<String, ArchivedStorageWrite> uniqueWrites = new HashMap<String, ArchivedStorageWrite>();
     private ArrayList<ArchivedStorageWrite> orphanedWrites = new ArrayList<ArchivedStorageWrite>();
 
@@ -63,11 +68,35 @@ public class ArchiveManager implements ChangeListener {
         return this.storage2Psrxml.get(id);
     }
 
-    public ArchivedStorageWrite checkUnique(ArchivedStorageWrite write){
-        String key = write.getStorageId()+write.getFileLabel(); // Nothing can have the same storage id and label!
+    public ArchivedStorageWriteIndex getArchivedWriteExtendedIndexForStorageId(long id) {
+        //Psrxml xml = this.storage2Psrxml.get(id);
+
+        ArchivedStorageWriteIndex oIdx = this.storage2Writes.get(id);
+
+        ArchivedStorageWriteIndex eIdx = new ArchivedStorageWriteIndex();
+
+        for (ArchivedStorageWrite write : oIdx.getArchivedStorageWriteList()) {
+            ArchivedStorageWriteExtended extended = new ArchivedStorageWriteExtended();
+            extended.setId(write.getId());
+            extended.setDateWritten(write.getDateWritten());
+            extended.setFileLabel(write.getFileLabel());
+            extended.setPsrxmlId(write.getPsrxmlId());
+            extended.setStorageId(write.getStorageId());
+            extended.setWriteSize(write.getWriteSize());
+            extended.addArchivedStorage((ArchivedStorage) this.dbMan.getById(write.getStorageId()));
+            extended.addPsrxml((Psrxml) this.dbMan.getById(write.getPsrxmlId()));
+            eIdx.addArchivedStorageWrite(extended);
+        }
+
+        return eIdx;
+    }
+
+    public ArchivedStorageWrite checkUnique(ArchivedStorageWrite write) {
+        String key = write.getStorageId() + write.getFileLabel(); // Nothing can have the same storage id and label!
+
         return uniqueWrites.get(key);
     }
-    
+
     public void itemUpdated(DatabaseManager dbMan, IdAble item, boolean remoteChange, boolean isModified) {
         if (item instanceof ArchivedStorage) {
             ArchivedStorage storage = (ArchivedStorage) item;
@@ -86,15 +115,22 @@ public class ArchiveManager implements ChangeListener {
             }
         } else if (item instanceof ArchivedStorageWrite) {
             ArchivedStorageWrite write = (ArchivedStorageWrite) item;
-            String key = write.getStorageId()+write.getFileLabel();
-            if(checkUnique(write)==null)uniqueWrites.put(key, write);
-                    
+            String key = write.getStorageId() + write.getFileLabel();
+            if (checkUnique(write) == null) {
+                uniqueWrites.put(key, write);
+            }
             if (!makeLink(write)) {
                 synchronized (this.orphanedWrites) {
                     orphanedWrites.add(write);
                 }
             }
 
+            ArchivedStorageWriteIndex idx = this.storage2Writes.get(write.getStorageId());
+            if (idx == null) {
+                idx = new ArchivedStorageWriteIndex();
+                this.storage2Writes.put(write.getStorageId(), idx);
+            }
+            idx.addArchivedStorageWrite(write);
         } else if (item instanceof Psrxml) {
             Psrxml psrxml = (Psrxml) item;
             synchronized (this.orphanedWrites) {

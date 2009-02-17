@@ -32,6 +32,7 @@ import bookkeepr.xml.XMLWriter;
 import bookkeepr.xmlable.ArchivedStorage;
 import bookkeepr.xmlable.ArchivedStorageIndex;
 import bookkeepr.xmlable.ArchivedStorageWrite;
+import bookkeepr.xmlable.ArchivedStorageWriteIndex;
 import bookkeepr.xmlable.DatabaseManager;
 import bookkeepr.xmlable.Psrxml;
 import bookkeepr.xmlable.PsrxmlIndex;
@@ -102,8 +103,10 @@ public class ArchivedStorageHandler extends AbstractHandler {
                                 return;
                             }
                         } else if (idAble instanceof ArchivedStorage) {
-                            PsrxmlIndex idx = archiveMan.getPsrxmlForStorageId(id);
+//                            PsrxmlIndex idx = archiveMan.getPsrxmlForStorageId(id);
+                            ArchivedStorageWriteIndex idx = archiveMan.getArchivedWriteExtendedIndexForStorageId(id);
                             if (idx != null) {
+                                
                                 XMLWriter.write(response.getOutputStream(), idx);
                                 response.getOutputStream().close();
                             } else {
