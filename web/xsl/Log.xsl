@@ -28,6 +28,9 @@
                 <a href="/sys/testlog">Create Test Events
                 </a>
             </li>
+	    <li>
+		    <a href="/sys/hashcheck">View Checksums</a>
+	    </li>
             <li>
                 <a href="/sys/down">Shut down server
                 </a>
