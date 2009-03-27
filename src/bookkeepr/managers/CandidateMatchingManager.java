@@ -93,6 +93,7 @@ public class CandidateMatchingManager implements ChangeListener {
 
                 bgRunner.offer(bgtask);
             } else if (item instanceof CandidateListStub) {
+                //@todo: Implement this!
             }
         }
     }

@@ -94,13 +94,58 @@ public class CandidateManager {
         long procId = candListStub.getProcessingId();
         long psrxmlId = candListStub.getPsrxmlId();
         long candlistId = candListStub.getId();
+        String datetime = candListStub.getObservedDate();
+        String datePath = "UNK/UNK";
+        if (datetime != null) {
+            datePath = datetime.substring(0, 7) + "/" + datetime.substring(0, 10);
+        }
+        StringBuffer buf = new StringBuffer();
+        Formatter formatter = new Formatter(buf);
+        formatter.format("%s/%s/%016x/%016x/%016x_%s/%016x.xml.gz", rootPath, datePath, psrxmlId, procId, candlistId, candListStub.getName(), stub.getId());
+        return buf.toString();
+    }
+
+    public String getCandidateListPath(CandidateListStub candListStub) {
+        long procId = candListStub.getProcessingId();
+        long psrxmlId = candListStub.getPsrxmlId();
+        long candlistId = candListStub.getId();
+        String datetime = candListStub.getObservedDate();
+        String datePath = "UNK/UNK";
+        if (datetime != null) {
+            datePath = datetime.substring(0, 7) + "/" + datetime.substring(0, 10);
+        }
+        StringBuffer buf = new StringBuffer();
+        Formatter formatter = new Formatter(buf);
+        formatter.format("%s/%s/%016x/%016x/%016x_%s.xml.gz", rootPath,datePath, psrxmlId, procId, candlistId, candListStub.getName());
+        return buf.toString();
+    }
+
+    public String getCandidateListDirectoryPath(CandidateListStub candListStub) {
+        long procId = candListStub.getProcessingId();
+        long psrxmlId = candListStub.getPsrxmlId();
+        long candlistId = candListStub.getId();
+        String datetime = candListStub.getObservedDate();
+        String datePath = "UNK/UNK";
+        if (datetime != null) {
+            datePath = datetime.substring(0, 7) + "/" + datetime.substring(0, 10);
+        }
+        StringBuffer buf = new StringBuffer();
+        Formatter formatter = new Formatter(buf);
+        formatter.format("%s/%s/%016x/%016x/%016x_%s", rootPath,datePath, psrxmlId, procId, candlistId, candListStub.getName());
+        return buf.toString();
+    }
+
+    public String getLegacyRawCandidateFilePath(RawCandidateStub stub, CandidateListStub candListStub) {
+        long procId = candListStub.getProcessingId();
+        long psrxmlId = candListStub.getPsrxmlId();
+        long candlistId = candListStub.getId();
         StringBuffer buf = new StringBuffer();
         Formatter formatter = new Formatter(buf);
         formatter.format("%s/%016x/%016x/%016x_%s/%016x.xml.gz", rootPath, psrxmlId, procId, candlistId, candListStub.getName(), stub.getId());
         return buf.toString();
     }
 
-    public String getCandidateListPath(CandidateListStub candListStub) {
+    public String getLegacyCandidateListPath(CandidateListStub candListStub) {
         long procId = candListStub.getProcessingId();
         long psrxmlId = candListStub.getPsrxmlId();
         long candlistId = candListStub.getId();
@@ -110,7 +155,7 @@ public class CandidateManager {
         return buf.toString();
     }
 
-    public String getCandidateListDirectoryPath(CandidateListStub candListStub) {
+    public String getLegacyCandidateListDirectoryPath(CandidateListStub candListStub) {
         long procId = candListStub.getProcessingId();
         long psrxmlId = candListStub.getPsrxmlId();
         long candlistId = candListStub.getId();
@@ -343,7 +388,7 @@ public class CandidateManager {
                 out.close();
             }
         } catch (IOException ex) {
-            Logger.getLogger(CandidateManager.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CandidateManager.class.getName()).log(Level.SEVERE, "Failed to write raw candidates to disk!", ex);
         }
 
 

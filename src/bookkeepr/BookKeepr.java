@@ -64,7 +64,7 @@ import org.xml.sax.SAXException;
  */
 public class BookKeepr {
 
-    private static final int version = 1;
+    private static final int version = 2;
     /*
      * The managers, that look after the data
      */
@@ -94,7 +94,7 @@ public class BookKeepr {
 
     WebHandler webHandler;
     BookKeeprStatusMonitor statusMon; // monitors the health of the server.
-    
+
     /*
      * Background task runner...
      * This is a thread that pulls jobs of a queue to do tasks in serial even
@@ -155,6 +155,7 @@ public class BookKeepr {
         try {
             test();
 
+            UpgradeChecker.pre_load(config.getRootPath(), this);
 
             saveConfig();
 
@@ -220,11 +221,13 @@ public class BookKeepr {
             Logger.getLogger(BookKeepr.class.getName()).log(Level.SEVERE, null, ex);
         }
 
+        UpgradeChecker.post_load(config.getRootPath(), this);
+
         bgHandler = new BackgroundTaskHandler(bgrunner);
         fetchHandler = new FetchHandler(this);
 
         HandlerCollection handlers = new HandlerCollection();
-        handlers.setHandlers(new Handler[]{sysHandler, fetchHandler, bgHandler, obsHandler,archiveHandler, candHandler, webHandler});
+        handlers.setHandlers(new Handler[]{sysHandler, fetchHandler, bgHandler, obsHandler, archiveHandler, candHandler, webHandler});
 
 
 
@@ -270,8 +273,10 @@ public class BookKeepr {
     public BookkeeprHost getHost() {
         BookkeeprHost host = new BookkeeprHost();
         host.setUrl(this.config.getExternalUrl());
-        host.setOriginId(this.masterDatabaseManager.getOriginId());
-        host.setMaxOriginId(this.masterDatabaseManager.getMaxOriginId());
+        host.setOriginId(this.config.getOriginId());
+        if (this.masterDatabaseManager != null) {
+            host.setMaxOriginId(this.masterDatabaseManager.getMaxOriginId());
+        }
         host.setStatus(statusMon.getStatus().toString());
         host.setErrors(statusMon.getNErr());
         host.setWarnings(statusMon.getNWarn());
@@ -398,6 +403,26 @@ public class BookKeepr {
 
     public BackgroundTaskRunner getBackgroundTaskRunner() {
         return bgrunner;
+    }
+
+    ArchiveManager getArchiveManager() {
+        return archiveManager;
+    }
+
+    CandidateManager getCandManager() {
+        return candManager;
+    }
+
+    ObservationManager getObsManager() {
+        return obsManager;
+    }
+
+    SessionManager getSessionManager() {
+        return sessionManager;
+    }
+
+    SyncManager getSyncManager() {
+        return syncManager;
     }
 
     private void test() {
