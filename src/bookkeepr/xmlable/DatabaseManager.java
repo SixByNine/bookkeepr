@@ -41,15 +41,18 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import javax.swing.text.DateFormatter;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -410,8 +413,10 @@ public class DatabaseManager implements XMLAble {
                         if (deleted != null) {
                             index.remove(item);
                             isModified.put(item.getId(), true);
+                            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-DD");
+                            String datestr = format.format(new Date());
                             // save the item to the trash
-                            File trashPath = new File(rootPath.getPath() + File.separator + "trash");
+                            File trashPath = new File(rootPath.getPath() + File.separator + "trash" + File.separator + datestr);
                             if (!trashPath.exists()) {
                                 trashPath.mkdirs();
                             }

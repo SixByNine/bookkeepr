@@ -153,8 +153,30 @@ public class CandidateHandler extends AbstractHandler {
                         Logger.getLogger(CandidateHandler.class.getName()).log(Level.SEVERE, null, ex);
                     }
 
+                } else if (request.getMethod().equals("DELETE")) {
+                    String[] elems = path.substring(1).split("/");
+                    if (elems.length < 3) {
+                        response.sendError(400, "Bad DELETE request for /cand/lists/{clistId}");
+                        return;
+                    }
+                    final long clistId = Long.parseLong(elems[2], 16);
+                    CandidateListStub cls = (CandidateListStub) dbMan.getById(clistId);
+                    if (cls == null) {
+                        response.sendError(404, "Bad ClistID requested for deletion (no such candlist)");
+                        Logger.getLogger(CandidateHandler.class.getName()).log(Level.WARNING, "Bad ClistID requested for deletion (no such candlist)");
+                        return;
+                    }
+                    try {
+                        this.candMan.deleteCandidateListAndCands(cls);
+                        response.setStatus(202);
+                    } catch (BookKeeprException ex) {
+                        response.sendError(500, "Could not delete candidate list as requested");
+                        Logger.getLogger(CandidateHandler.class.getName()).log(Level.WARNING, "Could not delete candidate list as requested", ex);
+                        return;
+                    }
+
                 } else {
-                    response.sendError(400, "Bad non-GET/non-POST request for /cand/lists");
+                    response.sendError(400, "Bad non-GET/non-POST/non-DELETE request for /cand/lists");
                     return;
                 }
             } else if (path.startsWith("/cand/viewed")) {

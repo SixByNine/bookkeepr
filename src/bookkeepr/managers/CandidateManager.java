@@ -24,6 +24,7 @@ import bookkeepr.BackgroundTaskRunner;
 import bookkeepr.BookKeeprException;
 import bookkeepr.xml.IdAble;
 import bookkeepr.xml.StringConvertable;
+import bookkeepr.xml.XMLReader;
 import bookkeepr.xml.XMLWriter;
 import bookkeepr.xml.display.GenerateRawCandidatePlot;
 import bookkeepr.xml.display.RasterImageCandidatePlot;
@@ -45,6 +46,8 @@ import coordlib.CoordinateDistanceComparitor;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -56,7 +59,9 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import org.xml.sax.SAXException;
 import pulsarhunter.jreaper.Colourmap;
 
 /**
@@ -116,7 +121,7 @@ public class CandidateManager {
         }
         StringBuffer buf = new StringBuffer();
         Formatter formatter = new Formatter(buf);
-        formatter.format("%s/%s/%016x/%016x/%016x_%s.xml.gz", rootPath,datePath, psrxmlId, procId, candlistId, candListStub.getName());
+        formatter.format("%s/%s/%016x/%016x/%016x_%s.xml.gz", rootPath, datePath, psrxmlId, procId, candlistId, candListStub.getName());
         return buf.toString();
     }
 
@@ -131,7 +136,7 @@ public class CandidateManager {
         }
         StringBuffer buf = new StringBuffer();
         Formatter formatter = new Formatter(buf);
-        formatter.format("%s/%s/%016x/%016x/%016x_%s", rootPath,datePath, psrxmlId, procId, candlistId, candListStub.getName());
+        formatter.format("%s/%s/%016x/%016x/%016x_%s", rootPath, datePath, psrxmlId, procId, candlistId, candListStub.getName());
         return buf.toString();
     }
 
@@ -167,6 +172,51 @@ public class CandidateManager {
 
     public File getCandidateListFile(CandidateListStub candListStub) {
         return new File(getCandidateListPath(candListStub));
+    }
+
+    public void deleteCandidateListAndCands(CandidateListStub candListStub) throws BookKeeprException {
+        File clistFile = this.getCandidateListFile(candListStub);
+        File clistDir = new File(this.getCandidateListDirectoryPath(candListStub));
+
+        Logger.getLogger(CandidateManager.class.getName()).log(Level.INFO, "Deleting candidate list " + StringConvertable.ID.toString(candListStub.getId()));
+        Logger.getLogger(CandidateManager.class.getName()).log(Level.INFO, "Deleting candidate file " + clistFile.getAbsolutePath());
+        Logger.getLogger(CandidateManager.class.getName()).log(Level.INFO, "Deleting candidate dir " + clistDir.getAbsolutePath());
+
+        CandidateList cl = null;
+
+        try {
+            cl = (CandidateList) XMLReader.read(new GZIPInputStream(new FileInputStream(clistFile)));
+        } catch (SAXException ex) {
+            throw new BookKeeprException("Cannot load candidate lists file for " + StringConvertable.ID.toString(candListStub.getId()), ex);
+        } catch (IOException ex) {
+            throw new BookKeeprException("Cannot load candidate lists file for " + StringConvertable.ID.toString(candListStub.getId()), ex);
+        }
+
+        if (cl != null) {
+            // Remove database entries.
+            Session ses = new Session();
+            for (RawCandidateBasic basic : cl.getRawCandidateBasicList()) {
+                dbMan.remove(dbMan.getById(basic.getId()), ses);
+            }
+            dbMan.remove(candListStub, ses);
+            dbMan.save(ses);
+            // remove candidate files...
+            File rmdir = new File(this.rootPath + File.separator + "DELETED");
+            rmdir.mkdirs();
+            rmdir = new File(this.rootPath + File.separator + "DELETED" + File.separator + clistFile.getName());
+            clistFile.renameTo(rmdir);
+            rmdir = new File(this.rootPath + File.separator + "DELETED" + File.separator + clistDir.getName());
+            clistDir.renameTo(rmdir);
+            if (clistFile.getParentFile().list().length == 0) {
+                clistFile.getParentFile().delete();
+                if (clistFile.getParentFile().getParentFile().list().length == 0) {
+                    clistFile.getParentFile().getParentFile().delete();
+                }
+            }
+        } else {
+            // fail
+            throw new BookKeeprException("Cannot load candidate lists file for " + StringConvertable.ID.toString(candListStub.getId()));
+        }
     }
 
     public CandidateListIndex getCandidateLists(CandListSelectionRequest req) {
