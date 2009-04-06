@@ -556,6 +556,9 @@ public class CandidateHandler extends AbstractHandler {
                             } catch (HttpException ex) {
                                 Logger.getLogger(CandidateHandler.class.getName()).log(Level.WARNING, "Could not make a httpreqest for remote Candidate", ex);
                                 response.sendError(500, "Could not make a httpreqest for remote Candidate");
+                            } catch (IOException ex) {
+                                Logger.getLogger(CandidateHandler.class.getName()).log(Level.WARNING, "Could not make a httpreqest for remote Candidate", ex);
+                                response.sendError(500, "Could not make a httpreqest for remote Candidate");
                             }
                             bookkeepr.returnHttpClient(httpclient);
 
@@ -709,6 +712,9 @@ public class CandidateHandler extends AbstractHandler {
                                 Logger.getLogger(CandidateHandler.class.getName()).log(Level.WARNING, "Bad uri specified for remote candidate", ex);
                                 response.sendError(500, "Bad uri specified for remote candidate");
                             } catch (HttpException ex) {
+                                Logger.getLogger(CandidateHandler.class.getName()).log(Level.WARNING, "Could not make a httpreqest for remote Candidate", ex);
+                                response.sendError(500, "Could not make a httpreqest for remote Candidate");
+                            }catch (IOException ex) {
                                 Logger.getLogger(CandidateHandler.class.getName()).log(Level.WARNING, "Could not make a httpreqest for remote Candidate", ex);
                                 response.sendError(500, "Could not make a httpreqest for remote Candidate");
                             }
