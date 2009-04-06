@@ -136,7 +136,7 @@ public class DatabaseManager implements XMLAble {
 
     public void setBookkeepr(BookKeepr bookkeepr) {
         this.bookkeepr = bookkeepr;
-        
+
     }
 
     public synchronized void remove(IdAble item, Session session) {
@@ -359,7 +359,9 @@ public class DatabaseManager implements XMLAble {
 
         ArrayList<IdAble> externals = new ArrayList<IdAble>();
         for (Session session : sessions) {
-            externals.addAll(session.getExternalItems());
+            if (session.getExternalItems() != null) {
+                externals.addAll(session.getExternalItems());
+            }
         }
         if (externals.size() > 0) {
             this.saveExternals(externals);
@@ -373,7 +375,7 @@ public class DatabaseManager implements XMLAble {
         HashMap<Long, Boolean> isModified = new HashMap<Long, Boolean>();
 
         for (Session session : sessions) {
-            if (session.getModified().size() == 0) {
+            if (session.getModified() == null || session.getModified().size() == 0) {
                 // don't bother saving the session if it's empty.
                 // It's probably just dealing with externals.
                 continue;
@@ -488,7 +490,11 @@ public class DatabaseManager implements XMLAble {
             Logger.getLogger(DatabaseManager.class.getName()).log(Level.SEVERE, null, ex);
         }
         for (Session session : sessions) {
-
+            if (session.getModified() == null || session.getModified().size() == 0) {
+                // don't bother saving the session if it's empty.
+                // It's probably just dealing with externals.
+                continue;
+            }
             // notify listeners.
             for (IdAble item : session.getModified()) {
 
@@ -571,8 +577,8 @@ public class DatabaseManager implements XMLAble {
 
 
                         bookkeepr.returnHttpClient(httpclient);
-                        httpclient=null;
-                        httpresp=null;
+                        httpclient = null;
+                        httpresp = null;
 
 
 

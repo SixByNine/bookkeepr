@@ -120,7 +120,7 @@ public class UpgradeChecker {
                             }
 
                             oldFile.delete();
-                            // remove the parent directories if empty.
+                            //remove the parent directories if empty.
                             if (oldFile.getParentFile().list().length == 0) {
                                 oldFile.getParentFile().delete();
                                 if (oldFile.getParentFile().getParentFile().list().length == 0) {
@@ -136,7 +136,8 @@ public class UpgradeChecker {
 
             }
             try {
-                bk.getMasterDatabaseManager().save(s);
+                if(s.getModifiedKeyList().size()!=0)
+                    bk.getMasterDatabaseManager().save(s);
             } catch (BookKeeprException ex) {
                 Logger.getLogger(UpgradeChecker.class.getName()).log(Level.SEVERE, "Error updating database!", ex);
                 System.exit(1);
