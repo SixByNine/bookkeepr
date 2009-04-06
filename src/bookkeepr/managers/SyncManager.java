@@ -145,6 +145,14 @@ public class SyncManager {
                     host.setOriginId(rhost.getOriginId());
 
                     host.setMaxOriginId(rhost.getMaxOriginId());
+                    host.setVersion(rhost.getVersion());
+                    if (host.getVersion() != obsdb.getBookkeepr().getHost().getVersion()) {
+                        Logger.getLogger(SyncManager.class.getName()).log(Level.INFO, "Host " + host.getUrl() + " is not of the same BookKeepr version as us! (Cannot sync)");
+                        if (host.getVersion() > obsdb.getBookkeepr().getHost().getVersion()) {
+                        }
+                        Logger.getLogger(SyncManager.class.getName()).log(Level.INFO, "There are newer versions of the BookKeepr on the network. Please update this software!");
+                    }
+
                 } else {
                     Logger.getLogger(SyncManager.class.getName()).log(Level.WARNING, "Host " + host.getUrl() + " could not be identified");
                     continue;
@@ -177,7 +185,7 @@ public class SyncManager {
                     HttpResponse response = httpclient.execute(httpget);
                     if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
 
-                        Logger.getLogger(SyncManager.class.getName()).log(Level.FINE, "Managed to connect to " + host.getUrl() + "/ident/ ");
+                        Logger.getLogger(SyncManager.class.getName()).log(Level.FINE, "Managed to connect to " + host.getUrl() + "/sync/ ");
 
                     } else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_NOT_FOUND) {
                         Logger.getLogger(SyncManager.class.getName()).log(Level.INFO, "Up-to-date with host");
