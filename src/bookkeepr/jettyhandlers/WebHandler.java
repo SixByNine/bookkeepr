@@ -58,15 +58,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.http.Header;
 import org.apache.http.HttpException;
-import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.params.HttpClientParams;
-import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.entity.InputStreamEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.mortbay.jetty.Request;
 import org.mortbay.jetty.handler.AbstractHandler;
 
@@ -79,20 +75,11 @@ public class WebHandler extends AbstractHandler {
     private static Pattern regex = Pattern.compile("/");
     private static Pattern badchar = Pattern.compile("\\.\\.");
     private BookKeepr bookkeepr;
-    private HttpClient httpclient;
     private String localroot;
 
     public WebHandler(BookKeepr bookkeepr, String localroot) {
         this.bookkeepr = bookkeepr;
         this.localroot = localroot;
-        httpclient = new DefaultHttpClient();
-        if (bookkeepr.getConfig().getProxyUrl() != null) {
-            final HttpHost proxy =
-                    new HttpHost(bookkeepr.getConfig().getProxyUrl(), bookkeepr.getConfig().getProxyPort(), "http");
-            httpclient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
-        }
-        
-        HttpClientParams.setRedirecting(httpclient.getParams(), false);
 
     }
 
@@ -101,7 +88,7 @@ public class WebHandler extends AbstractHandler {
             response.sendRedirect("/web/");
         }
 
-        
+        HttpClient httpclient = null;
         if (path.startsWith("/web/xmlify")) {
             ((Request) request).setHandled(true);
             if (request.getMethod().equals("POST")) {
@@ -133,15 +120,20 @@ public class WebHandler extends AbstractHandler {
                     ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
                     httppost.setEntity(new InputStreamEntity(in, -1));
                     Logger.getLogger(WebHandler.class.getName()).log(Level.INFO, "Xmlifier posting to " + bookkeepr.getConfig().getExternalUrl() + remotePath);
+
+                    httpclient = bookkeepr.checkoutHttpClient();
                     HttpResponse httpresp = httpclient.execute(httppost);
                     for (Header head : httpresp.getAllHeaders()) {
-                        if(head.getName().equalsIgnoreCase("transfer-encoding"))continue;
+                        if (head.getName().equalsIgnoreCase("transfer-encoding")) {
+                            continue;
+                        }
                         response.setHeader(head.getName(), head.getValue());
                     }
                     response.setStatus(httpresp.getStatusLine().getStatusCode());
 
 
                     httpresp.getEntity().writeTo(response.getOutputStream());
+
                 } catch (HttpException ex) {
                     Logger.getLogger(WebHandler.class.getName()).log(Level.WARNING, "HttpException " + ex.getMessage(), ex);
                     response.sendError(500, ex.getMessage());
@@ -149,7 +141,12 @@ public class WebHandler extends AbstractHandler {
                 } catch (URISyntaxException ex) {
                     Logger.getLogger(WebHandler.class.getName()).log(Level.WARNING, ex.getMessage(), ex);
                     response.sendError(400, "Invalid target URI");
+                } finally {
+                    if (httpclient != null) {
+                        bookkeepr.returnHttpClient(httpclient);
+                    }
                 }
+
 
 
             }

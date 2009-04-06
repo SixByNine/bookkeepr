@@ -78,10 +78,8 @@ public class DatabaseManager implements XMLAble {
     private int originId = 0x00;
     private int maxOriginId = 0;
     private BookKeepr bookkeepr;
-    private HttpClient httpclient;
 
     public DatabaseManager() {
-        httpclient = new DefaultHttpClient();
 
         Arrays.fill(nextId, 0x1L);
         for (int i = 0; i < latestIds.length; i++) {
@@ -138,11 +136,7 @@ public class DatabaseManager implements XMLAble {
 
     public void setBookkeepr(BookKeepr bookkeepr) {
         this.bookkeepr = bookkeepr;
-        if (bookkeepr.getConfig().getProxyUrl() != null) {
-            final HttpHost proxy =
-                    new HttpHost(bookkeepr.getConfig().getProxyUrl(), bookkeepr.getConfig().getProxyPort(), "http");
-            httpclient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
-        }
+        
     }
 
     public synchronized void remove(IdAble item, Session session) {
@@ -571,11 +565,14 @@ public class DatabaseManager implements XMLAble {
                         httppost.setEntity(new InputStreamEntity(in,
                                 -1));
                         Logger.getLogger(DatabaseManager.class.getName()).log(Level.INFO, "Database posting to " + host.getUrl() + "/insert/ to modify items");
+                        HttpClient httpclient = bookkeepr.checkoutHttpClient();
                         HttpResponse httpresp = httpclient.execute(httppost);
                         int statuscode = httpresp.getStatusLine().getStatusCode();
 
 
-
+                        bookkeepr.returnHttpClient(httpclient);
+                        httpclient=null;
+                        httpresp=null;
 
 
 

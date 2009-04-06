@@ -33,13 +33,13 @@ import bookkeepr.xmlable.BookkeeprHost;
 import bookkeepr.xmlable.CandidateListStub;
 import bookkeepr.xmlable.DatabaseManager;
 import bookkeepr.xmlable.RawCandidate;
-import bookkeepr.xmlable.RawCandidateBasic;
 import bookkeepr.xmlable.RawCandidateStub;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.logging.Level;
@@ -71,7 +71,11 @@ import java.io.PrintWriter;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
 import javax.imageio.ImageIO;
-import pulsarhunter.jreaper.HarmonicType;
+import org.apache.http.Header;
+import org.apache.http.HttpException;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 
 /**
  *
@@ -527,15 +531,40 @@ public class CandidateHandler extends AbstractHandler {
                             outputToInput(new FileInputStream(candMan.getCandidateListFile((CandidateListStub) idable)), response.getOutputStream());
 
                         } else {
-                            // request for a remote item...
-                            // currently re-direct to the remote server.. perhaps we should pass through?
-                            BookkeeprHost host = bookkeepr.getConfig().getBookkeeprHost(origin);
-                            if (host != null) {
-                                response.setStatus(301);
-                                response.addHeader("Location", host.getUrl() + path);
-                            } else {
-                                response.sendError(500, "Cannot find a bookkeepr server for origin id " + origin);
+                            HttpClient httpclient = bookkeepr.checkoutHttpClient();
+
+                            try {
+                                // request for a remote item...
+                                // currently re-direct to the remote server.. perhaps we should pass through?
+                                //@TODO: Change this to a pass through rather than redirect so that ssh tunnels work.
+                                BookkeeprHost host = bookkeepr.getConfig().getBookkeeprHost(origin);
+                                String targetpath = host.getUrl() + path;
+                                HttpGet httpreq = new HttpGet(targetpath);
+                                HttpResponse httpresp = httpclient.execute(httpreq);
+                                for (Header head : httpresp.getAllHeaders()) {
+                                    if (head.getName().equalsIgnoreCase("transfer-encoding")) {
+                                        continue;
+                                    }
+                                    response.setHeader(head.getName(), head.getValue());
+                                }
+                                response.setStatus(httpresp.getStatusLine().getStatusCode());
+                                httpresp.getEntity().writeTo(response.getOutputStream());
+
+                            } catch (URISyntaxException ex) {
+                                Logger.getLogger(CandidateHandler.class.getName()).log(Level.WARNING, "Bad uri specified for remote candidate", ex);
+                                response.sendError(500, "Bad uri specified for remote candidate");
+                            } catch (HttpException ex) {
+                                Logger.getLogger(CandidateHandler.class.getName()).log(Level.WARNING, "Could not make a httpreqest for remote Candidate", ex);
+                                response.sendError(500, "Could not make a httpreqest for remote Candidate");
                             }
+                            bookkeepr.returnHttpClient(httpclient);
+
+//                            if (host != null) {
+//                                response.setStatus(301);
+//                                response.addHeader("Location", host.getUrl() + path);
+//                            } else {
+//                                response.sendError(500, "Cannot find a bookkeepr server for origin id " + origin);
+//                            }
                         }
                     } else {
                         response.sendError(400, "Bad non-GET request for a candidate list");
@@ -657,15 +686,33 @@ public class CandidateHandler extends AbstractHandler {
 
 
                         } else {
-                            // request for a remote item...
-                            // currently re-direct to the remote server.. perhaps we should pass through?
-                            BookkeeprHost host = bookkeepr.getConfig().getBookkeeprHost(origin);
-                            if (host != null) {
-                                response.setStatus(301);
-                                response.addHeader("Location", host.getUrl() + path);
-                            } else {
-                                response.sendError(500, "Cannot find a bookkeepr server for origin id " + origin);
+                            HttpClient httpclient = bookkeepr.checkoutHttpClient();
+
+                            try {
+                                // request for a remote item...
+                                // currently re-direct to the remote server.. perhaps we should pass through?
+                                //@TODO: Change this to a pass through rather than redirect so that ssh tunnels work.
+                                BookkeeprHost host = bookkeepr.getConfig().getBookkeeprHost(origin);
+                                String targetpath = host.getUrl() + path;
+                                HttpGet httpreq = new HttpGet(targetpath);
+                                HttpResponse httpresp = httpclient.execute(httpreq);
+                                for (Header head : httpresp.getAllHeaders()) {
+                                    if (head.getName().equalsIgnoreCase("transfer-encoding")) {
+                                        continue;
+                                    }
+                                    response.setHeader(head.getName(), head.getValue());
+                                }
+                                response.setStatus(httpresp.getStatusLine().getStatusCode());
+                                httpresp.getEntity().writeTo(response.getOutputStream());
+
+                            } catch (URISyntaxException ex) {
+                                Logger.getLogger(CandidateHandler.class.getName()).log(Level.WARNING, "Bad uri specified for remote candidate", ex);
+                                response.sendError(500, "Bad uri specified for remote candidate");
+                            } catch (HttpException ex) {
+                                Logger.getLogger(CandidateHandler.class.getName()).log(Level.WARNING, "Could not make a httpreqest for remote Candidate", ex);
+                                response.sendError(500, "Could not make a httpreqest for remote Candidate");
                             }
+                            bookkeepr.returnHttpClient(httpclient);
                         }
 
                     } else {

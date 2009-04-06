@@ -32,24 +32,17 @@ import bookkeepr.xmlable.DatabaseManager;
 import bookkeepr.xmlable.Index;
 import bookkeepr.xmlable.IndexIndex;
 import bookkeepr.xmlable.Session;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.http.HttpException;
-import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.conn.params.ConnRoutePNames;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.xml.sax.SAXException;
 
 /**
@@ -58,7 +51,6 @@ import org.xml.sax.SAXException;
  */
 public class SyncManager {
 
-    private HttpClient httpclient;
     private DatabaseManager obsdb;
     private BookkeeprConfig config;
     private SessionManager sessionManager;
@@ -70,12 +62,7 @@ public class SyncManager {
         this.config = config;
         this.sessionManager = sessionManager;
         this.bgrunner = bgrunner;
-        httpclient = new DefaultHttpClient();
-        if (config.getProxyUrl() != null) {
-            final HttpHost proxy =
-                    new HttpHost(config.getProxyUrl(), config.getProxyPort(), "http");
-            httpclient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
-        }
+
     }
 
     private void delaySyncTask() {
@@ -127,9 +114,9 @@ public class SyncManager {
     }
 
     public void sync() {
+        HttpClient httpclient = obsdb.getBookkeepr().checkoutHttpClient();
 
         for (BookkeeprHost host : config.getBookkeeprHostList()) {
-
             Logger.getLogger(SyncManager.class.getName()).log(Level.INFO, "Attempting to sync with " + host.getUrl());
             try {
 
@@ -283,5 +270,6 @@ public class SyncManager {
                 }
             }
         }
+        this.obsdb.getBookkeepr().returnHttpClient(httpclient);
     }
 }

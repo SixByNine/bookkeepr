@@ -45,8 +45,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.BindException;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.http.HttpHost;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.params.HttpClientParams;
+import org.apache.http.conn.params.ConnRoutePNames;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.HttpConnectionParams;
 import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.HandlerCollection;
@@ -108,6 +116,7 @@ public class BookKeepr {
 
     File configFile; // the configuration file File object.
 
+    private Queue<HttpClient> httpClients = new ArrayBlockingQueue<HttpClient>(20);
 
     /**
      * This loads the configuration file and sets the intial settings. 
@@ -141,7 +150,17 @@ public class BookKeepr {
         } catch (IOException ex) {
             Logger.getLogger(BookKeepr.class.getName()).log(Level.SEVERE, null, ex);
         }
-
+        for (int i = 0; i < 20; i++) {
+            HttpClient httpclient = new DefaultHttpClient();
+            HttpClientParams.setRedirecting(httpclient.getParams(), false);
+            HttpConnectionParams.setConnectionTimeout(httpclient.getParams(), 10000);
+            if (config.getProxyUrl() != null) {
+                final HttpHost proxy =
+                        new HttpHost(config.getProxyUrl(), config.getProxyPort(), "http");
+                httpclient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
+            }
+            httpClients.add(httpclient);
+        }
 
     }
 
@@ -423,6 +442,28 @@ public class BookKeepr {
 
     SyncManager getSyncManager() {
         return syncManager;
+    }
+
+    public HttpClient checkoutHttpClient() {
+
+        HttpClient ret = null;
+        while (ret == null) {
+            synchronized (httpClients) {
+                ret = httpClients.poll();
+            }
+            if (ret == null) {
+                Logger.getLogger(BookKeepr.class.getName()).log(Level.WARNING, "Run out of http handlers in BookKeepr!");
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                }
+            }
+        }
+        return ret;
+    }
+
+    public void returnHttpClient(HttpClient client) {
+        this.httpClients.offer(client);
     }
 
     private void test() {

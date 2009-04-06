@@ -559,7 +559,7 @@ public class ObservationHandler extends AbstractHandler {
         bookkeepr.getBackgroundTaskRunner().offer(bgtask);
         StringBuffer buf = new StringBuffer();
         Formatter formatter = new Formatter(buf);
-        formatter.format("%s/%s/%d", manager.getExternalUrl(), "tasks", bgtask.getId());
+        formatter.format("/%s/%d","tasks", bgtask.getId());
         response.setStatus(303);
         response.addHeader("Location", buf.toString());
 
