@@ -5,7 +5,7 @@ echo "==================================="
 if ( -e ./dist/BookKeepr2.jar ) then
 	echo "We appear to be in a bookkeepr directory..."
 	echo "Downloading new code"
-	wget http://www.atnf.csiro.au/people/Michael.Keith/bookkeepr/BookKeepr.tar.gz
+	wget -r http://www.atnf.csiro.au/people/Michael.Keith/bookkeepr/BookKeepr.tar.gz
 	if ( $? == 0) then
 		echo "Got a file"
 	else
