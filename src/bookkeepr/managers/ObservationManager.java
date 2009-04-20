@@ -9,26 +9,28 @@ import bookkeepr.managers.observationdatabase.ScheduleManager;
 import bookkeepr.managers.observationdatabase.SkyViewManager;
 import bookkeepr.xml.IdAble;
 import bookkeepr.xmlable.Backend;
+import bookkeepr.xmlable.Configuration;
 import bookkeepr.xmlable.CreatePointingsRequest;
 import bookkeepr.xmlable.CreateScheduleRequest;
 import bookkeepr.xmlable.DatabaseManager;
 import bookkeepr.xmlable.Observation;
-import bookkeepr.xmlable.ObservationStatus;
 import bookkeepr.xmlable.Pointing;
 import bookkeepr.xmlable.PointingIndex;
 import bookkeepr.xmlable.PointingSelectRequest;
 import bookkeepr.xmlable.Psrxml;
 import bookkeepr.xmlable.Receiver;
 import bookkeepr.xmlable.Session;
+import bookkeepr.xmlable.SurveyStatus;
+import bookkeepr.xmlable.SurveyStatusSection;
 import bookkeepr.xmlable.Telescope;
 import coordlib.Coordinate;
-import coordlib.CoordinateDistanceComparitor;
 import coordlib.CoordinateDistanceComparitorGalactic;
 import java.awt.image.BufferedImage;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
@@ -57,8 +59,6 @@ public class ObservationManager implements ChangeListener {
     private PointingsManager pointingsManager;
     private PsrXMLManager psrxmlManager;
     private SkyViewManager skyViewManager;
-    
-    
     private Comparator<IdAble> idAbleComparator = new Comparator<IdAble>() {
 
         public int compare(IdAble o1, IdAble o2) {
@@ -90,11 +90,6 @@ public class ObservationManager implements ChangeListener {
             }
         }
 
-    }
-
-    public ObservationStatus getStatus() {
-        ObservationStatus ret = new ObservationStatus();
-        return ret;
     }
 
     /*
@@ -190,8 +185,7 @@ public class ObservationManager implements ChangeListener {
     public void addPsrXML(Psrxml header) throws PointingNotFoundException, BookKeeprException {
         psrxmlManager.addPsrXML(header);
     }
-    
-    
+
     public Psrxml queryPsrXML(Psrxml header) throws PointingNotFoundException, BookKeeprException {
         return psrxmlManager.queryPsrXML(header);
     }
@@ -359,47 +353,64 @@ public class ObservationManager implements ChangeListener {
             }
         }
     }
-    
-    
-    public List<String> getPointingObsnErrors(){
+
+    public List<String> getPointingObsnErrors() {
         ArrayList<String> sepns = new ArrayList<String>();
-        CoordinateDistanceComparitorGalactic cdc = new CoordinateDistanceComparitorGalactic(0,0);
-        for(Psrxml header : this.getAllObservations()){
+        CoordinateDistanceComparitorGalactic cdc = new CoordinateDistanceComparitorGalactic(0, 0);
+        for (Psrxml header : this.getAllObservations()) {
             Pointing ptg = (Pointing) this.dbManager.getById(header.getPointingId());
             double min = 100000000;
-            Coordinate closest=null;
-            for(Coordinate c : ptg.getCoverage()){
+            Coordinate closest = null;
+            for (Coordinate c : ptg.getCoverage()) {
                 double dist = cdc.difference(header.getStartCoordinate().getGl(), header.getStartCoordinate().getGb(), c.getGl(), c.getGb());
-                if (dist < min){
-                    min=dist;
-                    closest=c;
+                if (dist < min) {
+                    min = dist;
+                    closest = c;
                 }
             }
-            if(min > 30.0/3600.0){
-                System.out.printf("%s %s\n",header.getStartCoordinate().toString(true),closest.toString(true) );
+            if (min > 30.0 / 3600.0) {
+                System.out.printf("%s %s\n", header.getStartCoordinate().toString(true), closest.toString(true));
             }
-            sepns.add(ptg.getGridId() + "\t"+header.getDataFiles().get(0).getFilename()+"\t"+(min*3600));
+            sepns.add(ptg.getGridId() + "\t" + header.getDataFiles().get(0).getFilename() + "\t" + (min * 3600));
         }
-        
+
         return sepns;
-        
+
     }
-    
-    
-    public int getObservedPointingCount(long configurationId){
-        int count=0;
-        for(Pointing p : this.allPointings){
-            if(!p.getToBeObserved() && p.getConfigurationId()==configurationId)count++;
+
+    private int getObservedPointingCount(long configurationId) {
+        int count = 0;
+        for (Pointing p : this.allPointings) {
+            if (!p.getToBeObserved() && p.getConfigurationId() == configurationId) {
+                count++;
+            }
         }
         return count;
     }
-    
-    public int getAllPointingCount(long configurationId){
-        int count=0;
-        for(Pointing p : this.allPointings){
-            if(p.getConfigurationId()==configurationId)count++;
+
+    private int getAllPointingCount(long configurationId) {
+        int count = 0;
+        for (Pointing p : this.allPointings) {
+            if (p.getConfigurationId() == configurationId) {
+                count++;
+            }
         }
         return count;
     }
-    
+
+    public SurveyStatus getSurveyStatus() {
+        SurveyStatus status = new SurveyStatus();
+        status.setDate(new Date());
+        for (IdAble idable : this.dbManager.getAllOfType(TypeIdManager.getTypeFromClass(Configuration.class))) {
+            Configuration config = (Configuration) idable;
+            SurveyStatusSection sec = new SurveyStatusSection();
+            sec.setConfigName(config.getName());
+            sec.setConfigurationId(config.getId());
+            sec.setObservedPointings(this.getObservedPointingCount(config.getId()));
+            sec.setTotalPointings(this.getAllPointingCount(config.getId()));
+            sec.setPercentComplete(100.0f * (float) sec.getObservedPointings() / (float) sec.getTotalPointings());
+            status.addSurveyStatusSection(sec);
+        }
+        return status;
+    }
 }

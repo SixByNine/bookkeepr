@@ -222,6 +222,23 @@ public class ObservationHandler extends AbstractHandler {
                     return;
                 }
 
+            } else if (path.startsWith("/obs/status")) {
+                if (request.getMethod().equals("GET")) {
+                    OutputStream out = response.getOutputStream();
+                    String hdr = request.getHeader("Accept-Encoding");
+                    if (hdr != null && hdr.contains("gzip")) {
+                        // if the host supports gzip encoding, gzip the output for quick transfer speed.
+                        out = new GZIPOutputStream(out);
+                        response.setHeader("Content-Encoding", "gzip");
+                    }
+                    XMLWriter.write(out, observationManager.getSurveyStatus());
+                    out.close();
+                    return;
+                } else {
+                    response.sendError(400, "Submitted request was not understood: Not a GET message");
+                    Logger.getLogger(ObservationHandler.class.getName()).log(Level.INFO, "Recieved malformed request");
+                    return;
+                }
             } else if (path.startsWith("/obs/querypsrxml")) {
                 if (request.getMethod().equals("POST")) {
                     try {
@@ -559,7 +576,7 @@ public class ObservationHandler extends AbstractHandler {
         bookkeepr.getBackgroundTaskRunner().offer(bgtask);
         StringBuffer buf = new StringBuffer();
         Formatter formatter = new Formatter(buf);
-        formatter.format("/%s/%d","tasks", bgtask.getId());
+        formatter.format("/%s/%d", "tasks", bgtask.getId());
         response.setStatus(303);
         response.addHeader("Location", buf.toString());
 
