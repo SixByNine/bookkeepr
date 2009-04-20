@@ -535,8 +535,6 @@ public class CandidateHandler extends AbstractHandler {
 
                             try {
                                 // request for a remote item...
-                                // currently re-direct to the remote server.. perhaps we should pass through?
-                                //@TODO: Change this to a pass through rather than redirect so that ssh tunnels work.
                                 BookkeeprHost host = bookkeepr.getConfig().getBookkeeprHost(origin);
                                 String targetpath = host.getUrl() + path;
                                 HttpGet httpreq = new HttpGet(targetpath);
@@ -693,8 +691,6 @@ public class CandidateHandler extends AbstractHandler {
 
                             try {
                                 // request for a remote item...
-                                // currently re-direct to the remote server.. perhaps we should pass through?
-                                //@TODO: Change this to a pass through rather than redirect so that ssh tunnels work.
                                 BookkeeprHost host = bookkeepr.getConfig().getBookkeeprHost(origin);
                                 String targetpath = host.getUrl() + path;
                                 HttpGet httpreq = new HttpGet(targetpath);

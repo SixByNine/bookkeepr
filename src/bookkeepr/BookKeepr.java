@@ -214,25 +214,6 @@ public class BookKeepr {
             masterDatabaseManager.restore();
 
 
-//            Session session = new Session();
-//            for (int i = 0; i < 10; i++) {
-//                Pointing ptg = new Pointing();
-//                ptg.setGridId(Integer.toString(i));
-//                ptg.setTarget("G 10, " + i);
-//                masterDatabaseManager.add(ptg, session);
-//            }
-//
-//            for (int i = 0; i < 10; i++) {
-//                Observation ptg = new Observation();
-//                ptg.setBeamNumber(i);
-//                //ptg.setTarget("G 0, 0");
-//                masterDatabaseManager.add(ptg, session);
-//            }
-//
-//            masterDatabaseManager.save(session);
-//            session = (Session) obsdb.getById(0x0000100000000000L);
-//            IndexIndex idx = obsdb.getFromSession(session);
-//            XMLWriter.write(new FileOutputStream("out.xml"), idx);
 
         } catch (SAXException ex) {
             Logger.getLogger(BookKeepr.class.getName()).log(Level.SEVERE, null, ex);
@@ -257,25 +238,6 @@ public class BookKeepr {
         threadPool.setMaxThreads(100);
         threadPool.setMinThreads(10);
         server.setThreadPool(threadPool);
-
-//        new Thread() {
-//
-//            @Override
-//            public void run() {
-//                while (true) {
-//                   
-//
-//                    try {
-//                        Thread.sleep(1000);
-//                    } catch (InterruptedException ex) {
-//                        Logger.getLogger(BookKeepr.class.getName()).log(Level.SEVERE, null, ex);
-//                    }
-//                     System.out.println("Idle: " + threadPool.getIdleThreads());
-//                    System.out.println("Thrd: " + threadPool.getThreads());
-//                }
-//            }
-//        }.start();
-
         server.setHandler(handlers);
 
     }
@@ -369,35 +331,6 @@ public class BookKeepr {
     }
 
     public static void main(String[] args) {
-
-
-/////TEST YRDY
-//        try {
-//            XMLReader.read(new GZIPInputStream(new FileInputStream("./testcands/CMA006_0041_001.xml.gz")));
-//        } catch (SAXException ex) {
-//            Logger.getLogger(BookKeepr.class.getName()).log(Level.SEVERE, null, ex);
-//        } catch (IOException ex) {
-//            Logger.getLogger(BookKeepr.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//
-//        System.exit(1);
-//        RawCandidate cand = new RawCandidate();
-//        cand.setSourceId("FAKEPULSAR");
-//        cand.setMjdStart(54234.21353243253);
-//        cand.setUtc(new Date());
-//        RawCandidateSection sec = new RawCandidateSection();
-//        sec.setName("test_section");
-//        sec.setBestSnr(23);
-//        sec.setBestTopoPeriod(0.213);
-//        sec.setProfile(new double[]{0,2,4,6,123,222,254,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4,213,1,4});
-//        cand.addRawCandidateSection(sec);
-//        try {
-//            XMLWriter.write(new FileOutputStream("test_cand.xml"), cand);
-//        } catch (FileNotFoundException ex) {
-//            Logger.getLogger(BookKeepr.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//        System.exit(1);
-        ///TEST
 
 
         String file = "bookkeepr.cfg.xml";

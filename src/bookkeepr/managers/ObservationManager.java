@@ -57,6 +57,8 @@ public class ObservationManager implements ChangeListener {
     private PointingsManager pointingsManager;
     private PsrXMLManager psrxmlManager;
     private SkyViewManager skyViewManager;
+    
+    
     private Comparator<IdAble> idAbleComparator = new Comparator<IdAble>() {
 
         public int compare(IdAble o1, IdAble o2) {
@@ -381,6 +383,23 @@ public class ObservationManager implements ChangeListener {
         
         return sepns;
         
+    }
+    
+    
+    public int getObservedPointingCount(long configurationId){
+        int count=0;
+        for(Pointing p : this.allPointings){
+            if(!p.getToBeObserved() && p.getConfigurationId()==configurationId)count++;
+        }
+        return count;
+    }
+    
+    public int getAllPointingCount(long configurationId){
+        int count=0;
+        for(Pointing p : this.allPointings){
+            if(p.getConfigurationId()==configurationId)count++;
+        }
+        return count;
     }
     
 }
