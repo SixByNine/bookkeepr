@@ -72,7 +72,7 @@ import org.xml.sax.SAXException;
  */
 public class BookKeepr {
 
-    private static final int version = 2;
+    private static final int version = 3;
     /*
      * The managers, that look after the data
      */

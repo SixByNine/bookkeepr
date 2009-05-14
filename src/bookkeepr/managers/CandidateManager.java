@@ -36,6 +36,7 @@ import bookkeepr.xmlable.ClassifiedCandidate;
 import bookkeepr.xmlable.ClassifiedCandidateIndex;
 import bookkeepr.xmlable.ClassifiedCandidateSelectRequest;
 import bookkeepr.xmlable.DatabaseManager;
+import bookkeepr.xmlable.Psrxml;
 import bookkeepr.xmlable.RawCandidate;
 import bookkeepr.xmlable.RawCandidateBasic;
 import bookkeepr.xmlable.RawCandidateSection;
@@ -47,7 +48,6 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -111,10 +111,17 @@ public class CandidateManager {
     }
 
     public String getCandidateListPath(CandidateListStub candListStub) {
+        return getCandidateListPath(candListStub, false);
+    }
+
+    public String getCandidateListPath(CandidateListStub candListStub, boolean wrongDate) {
         long procId = candListStub.getProcessingId();
         long psrxmlId = candListStub.getPsrxmlId();
         long candlistId = candListStub.getId();
         String datetime = candListStub.getObservedDate();
+        if (wrongDate) {
+            datetime = candListStub.getCompletedDate();
+        }
         String datePath = "UNK/UNK";
         if (datetime != null) {
             datePath = datetime.substring(0, 7) + "/" + datetime.substring(0, 10);
@@ -126,10 +133,17 @@ public class CandidateManager {
     }
 
     public String getCandidateListDirectoryPath(CandidateListStub candListStub) {
+        return getCandidateListDirectoryPath(candListStub, false);
+    }
+
+    public String getCandidateListDirectoryPath(CandidateListStub candListStub, boolean wrongDate) {
         long procId = candListStub.getProcessingId();
         long psrxmlId = candListStub.getPsrxmlId();
         long candlistId = candListStub.getId();
         String datetime = candListStub.getObservedDate();
+        if (wrongDate) {
+            datetime = candListStub.getCompletedDate();
+        }
         String datePath = "UNK/UNK";
         if (datetime != null) {
             datePath = datetime.substring(0, 7) + "/" + datetime.substring(0, 10);
@@ -338,6 +352,7 @@ public class CandidateManager {
 
         CandidateList candlist = new CandidateList();
         CandidateListStub candlistStub = new CandidateListStub();
+        Psrxml psrxml = (Psrxml) dbMan.getById(psrxmlId);
 
         Session session = new Session();
         dbMan.add(candlistStub, session);
@@ -350,6 +365,9 @@ public class CandidateManager {
         Date now = new Date();
         candlistStub.setCompletedDate(now);
         candlist.setCompletedDate(now);
+
+        candlist.setObservedDate(psrxml.getUtc());
+        candlistStub.setObservedDate(psrxml.getUtc());
 
         candlist.setNcands(rawCands.size());
         candlistStub.setNcands(rawCands.size());

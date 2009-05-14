@@ -83,7 +83,7 @@ public class UpgradeChecker {
                     CandidateListStub clistStub = (CandidateListStub) idable;
                     // Add the date field to the clists
                     Psrxml psrxml = (Psrxml) bk.getMasterDatabaseManager().getById(clistStub.getPsrxmlId());
-                    
+
                     clistStub.setObservedDate(psrxml.getUtc());
                     bk.getMasterDatabaseManager().add(clistStub, s);
 
@@ -136,8 +136,9 @@ public class UpgradeChecker {
 
             }
             try {
-                if(s.getModifiedKeyList().size()!=0)
+                if (s.getModifiedKeyList().size() != 0) {
                     bk.getMasterDatabaseManager().save(s);
+                }
             } catch (BookKeeprException ex) {
                 Logger.getLogger(UpgradeChecker.class.getName()).log(Level.SEVERE, "Error updating database!", ex);
                 System.exit(1);
@@ -151,5 +152,83 @@ public class UpgradeChecker {
             Logger.getLogger(UpgradeChecker.class.getName()).log(Level.WARNING, "Could not write _host.xml file in db dir", iOException);
         }
 
+
+
+        if (upgradeFrom < 3) {
+            // we might have corrupted dates!
+            Logger.getLogger(UpgradeChecker.class.getName()).log(Level.INFO, "Checking for date corrupted candidate list stubs!");
+            List<IdAble> idlist = bk.getMasterDatabaseManager().getAllOfType(TypeIdManager.getTypeFromClass(CandidateListStub.class));
+            Session s = new Session();
+            for (IdAble idable : idlist) {
+
+                if (bk.getMasterDatabaseManager().getOrigin(idable) == bk.getMasterDatabaseManager().getOriginId()) {
+                    CandidateListStub clistStub = (CandidateListStub) idable;
+                    if (clistStub.getCompletedDate().equals(clistStub.getObservedDate())) {
+                        // if the two dates are the same, probably broken!
+                        // first fix the file
+
+
+                        Psrxml psrxml = (Psrxml) bk.getMasterDatabaseManager().getById(clistStub.getPsrxmlId());
+
+                        clistStub.setObservedDate(psrxml.getUtc());
+                        bk.getMasterDatabaseManager().add(clistStub, s);
+                        // move the files to the new path.
+                        {
+                            String newpath = bk.getCandManager().getCandidateListDirectoryPath(clistStub);
+                            String oldpath = bk.getCandManager().getCandidateListDirectoryPath(clistStub, true);
+                            File newFile = new File(newpath);
+                            File oldFile = new File(oldpath);
+                            if (oldFile.exists()) {
+                                newFile.getParentFile().mkdirs();
+                                boolean success = oldFile.renameTo(newFile);
+
+                                if (!success) {
+                                    Logger.getLogger(UpgradeChecker.class.getName()).log(Level.SEVERE, "ERROR! A failure occured trying to move candidate list dir to new path " + newFile.getAbsolutePath());
+                                    System.exit(1);
+                                }
+                            } else {
+                                Logger.getLogger(UpgradeChecker.class.getName()).log(Level.WARNING, "Candidate list dir " + oldFile.getName() + " did not exist");
+                            }
+                        }
+                        {
+                            String newpath = bk.getCandManager().getCandidateListPath(clistStub);
+                            String oldpath = bk.getCandManager().getCandidateListPath(clistStub, true);
+                            File newFile = new File(newpath);
+                            File oldFile = new File(oldpath);
+                            if (oldFile.exists()) {
+                                newFile.getParentFile().mkdirs();
+                                boolean success = oldFile.renameTo(newFile);
+
+                                if (!success) {
+                                    Logger.getLogger(UpgradeChecker.class.getName()).log(Level.SEVERE, "ERROR! A failure occured trying to move candidate list file to new path " + newFile.getAbsolutePath());
+                                    System.exit(1);
+                                }
+
+                                oldFile.delete();
+                                //remove the parent directories if empty.
+                                if (oldFile.getParentFile().list().length == 0) {
+                                    oldFile.getParentFile().delete();
+                                    if (oldFile.getParentFile().getParentFile().list().length == 0) {
+                                        oldFile.getParentFile().getParentFile().delete();
+                                    }
+                                }
+                            } else {
+                                Logger.getLogger(UpgradeChecker.class.getName()).log(Level.WARNING, "Candidate list file " + oldFile.getName() + " did not exist");
+                            }
+                        }
+                    }
+                }
+            }
+
+            try {
+                if (s.getModifiedKeyList().size() != 0) {
+                    bk.getMasterDatabaseManager().save(s);
+                }
+            } catch (BookKeeprException ex) {
+                Logger.getLogger(UpgradeChecker.class.getName()).log(Level.SEVERE, "Error updating database!", ex);
+                System.exit(1);
+
+            }
+        }
     }
 }

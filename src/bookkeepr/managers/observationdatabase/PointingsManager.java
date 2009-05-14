@@ -40,6 +40,7 @@ import coordlib.Coordinate;
 import coordlib.CoordinateDistanceComparitorGalactic;
 import coordlib.Dec;
 import coordlib.RA;
+import coordlib.SkyLocated;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,13 +66,14 @@ public class PointingsManager {
     public PointingsManager(ObservationManager obsmanager) {
         this.obsmanager = obsmanager;
     }
-/*
- * This function is REALLY inefficient.
- * 
- * Making schedules etc would be a lot faster if it wasn't so rubbish
- * 
- * @todo: Make this function faster.
- */
+    /*
+     * This function is REALLY inefficient.
+     * 
+     * Making schedules etc would be a lot faster if it wasn't so rubbish
+     * 
+     * @todo: Make this function faster.
+     */
+
     public PointingIndex getPointings(PointingSelectRequest req) {
 
         // If they have specified an exact Id to get then just return that
@@ -81,14 +83,14 @@ public class PointingsManager {
             if (idable != null && idable instanceof Pointing) {
                 PointingIndex idx = new PointingIndex();
                 ExtendedPointing ptg = new ExtendedPointing((Pointing) idable);
-            
+
                 Configuration conf = (Configuration) obsmanager.getDbManager().getById(ptg.getConfigurationId());
                 if (conf != null) {
                     ptg.setTobs(conf.getTobs());
-                    ptg.setScheduleLine(conf.getScheduleLine((Pointing)idable));
+                    ptg.setScheduleLine(conf.getScheduleLine((Pointing) idable));
                 }
                 ptg.setObservations(obsmanager.getObservations(ptg));
-                
+
                 idx.addItem(ptg);
                 return idx;
             } else {
@@ -162,39 +164,39 @@ public class PointingsManager {
                     interim.add(ptg);
                 }
             }
-             // update the result array
+            // update the result array
             result = interim;
             interim = null;
         }
-        
-        if(!Float.isNaN(req.getMaxTobs()) || !Float.isNaN(req.getMinTobs())){
-            
+
+        if (!Float.isNaN(req.getMaxTobs()) || !Float.isNaN(req.getMinTobs())) {
+
             ArrayList<Long> acceptConfigIds = new ArrayList<Long>();
-   
+
             List<IdAble> configs = this.obsmanager.getDbManager().getAllOfType(TypeIdManager.getTypeFromClass(Configuration.class));
             float maxTobs = Float.MAX_VALUE;
             float minTobs = Float.MIN_VALUE;
-            if(!Float.isNaN(req.getMaxTobs())){
+            if (!Float.isNaN(req.getMaxTobs())) {
                 maxTobs = req.getMaxTobs();
             }
-            if(!Float.isNaN(req.getMinTobs())){
+            if (!Float.isNaN(req.getMinTobs())) {
                 minTobs = req.getMinTobs();
             }
-            
-            for(IdAble idable : configs){
+
+            for (IdAble idable : configs) {
                 Configuration config = (Configuration) idable;
-                if(config.getTobs() < maxTobs && config.getTobs() > minTobs){
+                if (config.getTobs() < maxTobs && config.getTobs() > minTobs) {
                     acceptConfigIds.add(config.getId());
                 }
             }
-            
+
             interim = new ArrayList<Pointing>();
             for (Pointing ptg : result) {
-                if(acceptConfigIds.contains(ptg.getConfigurationId())){
+                if (acceptConfigIds.contains(ptg.getConfigurationId())) {
                     interim.add(ptg);
                 }
             }
-             // update the result array
+            // update the result array
             result = interim;
             interim = null;
         }
@@ -269,7 +271,7 @@ public class PointingsManager {
             interim = null;
         }
 
-        if(req.getIgnoreIdList() != null){
+        if (req.getIgnoreIdList() != null) {
             interim = new ArrayList<Pointing>();
             long[] list = req.getIgnoreIdList();
             Arrays.sort(list);
@@ -282,11 +284,12 @@ public class PointingsManager {
             result = interim;
             interim = null;
         }
-        
+
         PointingIndex idx = new PointingIndex();
         int count = 0;
         Configuration conf = null;
 
+        ArrayList<Pointing> e_result = new ArrayList<Pointing>();
         for (Pointing p : result) {
             count++;
             if (count > req.getMaxResults()) {
@@ -299,16 +302,42 @@ public class PointingsManager {
             }
             ptg.setScheduleLine(conf.getScheduleLine(p));
             ptg.setTobs(conf.getTobs());
-            idx.addPointing(ptg);
+            e_result.add(ptg);
         }
-
+idx.setList(e_result);
 
         return idx;
     }
 
-    public ArrayList<Pointing> getPointingsNear(Coordinate coord, float sepn) {
+    public ArrayList<Pointing> getPointingsNear(final Coordinate coord, float sepn) {
 
-        CoordinateDistanceComparitorGalactic distComp = new CoordinateDistanceComparitorGalactic(coord.getGl(), coord.getGb());
+        CoordinateDistanceComparitorGalactic distComp = new CoordinateDistanceComparitorGalactic(coord.getGl(), coord.getGb()) {
+
+            @Override
+            public int compare(SkyLocated o1, SkyLocated o2) {
+                if (o1 instanceof Pointing && o2 instanceof Pointing) {
+                    Pointing p1 = (Pointing) o1;
+                    Pointing p2 = (Pointing) o2;
+                    double min1 = Double.MAX_VALUE;
+                    double min2 = Double.MAX_VALUE;
+                    for (Coordinate c1 : p1.getCoverage()) {
+                        double d = super.difference(c1.getGl(), c1.getGb(), coord.getGl(), coord.getGb());
+                        if (d < min1) {
+                            min1 = d;
+                        }
+                    }
+                    for (Coordinate c2 : p2.getCoverage()) {
+                        double d = super.difference(c2.getGl(), c2.getGb(), coord.getGl(), coord.getGb());
+                        if (d < min2) {
+                            min2 = d;
+                        }
+                    }
+                    return (int) (100000.0 * (min1 - min2));
+                } else {
+                    return super.compare(o1, o2);
+                }
+            }
+        };
         double dist = 360;
         Coordinate quicky = null;
         if (sepn < obsmanager.quickSearchRange) {
@@ -330,7 +359,7 @@ public class PointingsManager {
         }
         nextptg:
         for (Pointing ptg : duplicate) {
-         
+
 
             if (distComp.difference(ptg.getTarget().getGl(), ptg.getTarget().getGb(), coord.getGl(), coord.getGb()) < sepn) {
                 result.add(ptg);
@@ -728,7 +757,7 @@ public class PointingsManager {
 
     private class Point {
 
-        double x, y;
+        double x,   y;
 
         public Point(
                 double x, double y) {
