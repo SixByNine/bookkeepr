@@ -1,0 +1,23 @@
+#!/bin/bash
+if [ $# -lt 1 ] ; then
+echo reqires a psrcat logic string...
+echo "$0 [logic string]"
+echo 'Used as `psrcat -l [logic string]`'
+exit -1
+fi
+test -n "$BOOKKEEPR_CLIENT"
+ret=$?
+if [ $ret -ne 0 ] ; then
+	echo 'Please set $BOOKKEEPR_CLIENT to the location'
+	echo 'of the BOOKKEEPR client directory'
+	exit -1
+fi
+logic="$*"
+
+psrcat -o short -nohead -nonumber -c "gl gb" -l "$logic" | while read line 
+	do
+	target="G $line"
+	\rm -f post.xml
+	sed -e "s:##TARGET##:${target}:" < $BOOKKEEPR_CLIENT/files/pointingselect.xml > post.xml
+	$BOOKKEEPR_CLIENT/util/xmlposter.py http://jura.atnf.csiro.au:24001/obs/manager post.xml | grep -e "schedule_line" | sed -e 's:\s*<[^>]*>::g'
+done

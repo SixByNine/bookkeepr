@@ -1,0 +1,8 @@
+<?xml version='1.0' ?>
+<pointing_select_request>
+	<target>##TARGET##</target>
+	<target_seperation>0.17</target_seperation>
+	<select_not_to_observe>false</select_not_to_observe>
+	<max_results>1</max_results>
+	<max_tobs>600</max_tobs>
+</pointing_select_request>
